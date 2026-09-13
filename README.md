@@ -41,7 +41,7 @@ See [Contributing](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Team
 
-Jane Choi, Hira Mian, Alexander Xykis. Additional members: TBD.
+Jane Choi, Hira Mian, Alexander Xykis. 
 
 ## License
 
