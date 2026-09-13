@@ -1,4 +1,4 @@
-hi# Agentic RAG for Enterprise Knowledge Search
+# Agentic RAG for Enterprise Knowledge Search
 
 A course project for searching enterprise knowledge and generating answers with
 sources. Currently a scaffold with a basic smoke test.
