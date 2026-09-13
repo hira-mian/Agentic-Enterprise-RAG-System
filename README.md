@@ -1,4 +1,4 @@
-# Agentic RAG for Enterprise Knowledge Search
+hi# Agentic RAG for Enterprise Knowledge Search
 
 A course project for searching enterprise knowledge and generating answers with
 sources. Currently a scaffold with a basic smoke test.
@@ -41,7 +41,7 @@ See [Contributing](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Team
 
-Jane Choi, Hira Mian. Additional members: TBD.
+Jane Choi, Hira Mian, Alexander Xykis. Additional members: TBD.
 
 ## License
 
