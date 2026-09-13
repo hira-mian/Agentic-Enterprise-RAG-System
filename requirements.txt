@@ -1,0 +1,2 @@
+# Test dependency for the initial project scaffold.
+pytest>=8.3,<9
