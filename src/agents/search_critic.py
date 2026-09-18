@@ -1,0 +1,1 @@
+"""Planned search critic module."""
