@@ -1,0 +1,1 @@
+"""Planned generator module."""

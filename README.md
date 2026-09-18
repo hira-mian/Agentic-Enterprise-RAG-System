@@ -1,7 +1,7 @@
 # Agentic RAG for Enterprise Knowledge Search
 
 A course project for searching enterprise knowledge and generating answers with
-sources. Currently a scaffold with a basic smoke test.
+sources. Currently includes a dataset loader, starter modules, and a smoke test.
 
 [GitHub repository](https://github.com/hira-mian/Agentic-Enterprise-RAG-System)
 
@@ -14,7 +14,8 @@ Search Agent → Retrieval/Tools → Search Critic
 
 ## Dataset
 
-EnterpriseRAG-Bench (planned).
+[EnterpriseRAG-Bench](https://huggingface.co/datasets/onyx-dot-app/EnterpriseRAG-Bench).
+The loader streams the `documents` and `questions` test subsets.
 
 ## Planned Tech Stack
 
@@ -28,11 +29,21 @@ Use Python 3.11:
 ```sh
 python3 -m venv .venv
 source .venv/bin/activate
+python --version
 python -m pip install -r requirements.txt
 python -m pytest
 ```
 
 CI runs the smoke test on every push and PR. It checks the test runner only.
+
+Inspect dataset schemas and one sample per subset (requires internet):
+
+```sh
+python -m src.data.loader
+```
+
+Starter modules live in `src/{data,retrieval,agents,generation,evaluation,api}`.
+Use `notebooks/exploration.ipynb` for exploration with the project environment.
 
 ## Contributing
 

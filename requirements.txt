@@ -1,2 +1,8 @@
-# Test dependency for the initial project scaffold.
+datasets
+pandas
+numpy
+rank-bm25
+sentence-transformers
+faiss-cpu
+scikit-learn
 pytest>=8.3,<9
