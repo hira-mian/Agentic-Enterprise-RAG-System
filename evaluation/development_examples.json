@@ -1,0 +1,86 @@
+[
+  {
+    "expected_doc_ids": [
+      "dsid_c6a6396159964deeb021d646eaaf2b0c"
+    ],
+    "question": "For a customer upgrading a private deployment in their own cloud environment, what restore time did support say is typical if the upgrade fails and a rollback is needed (assuming snapshots were taken)?",
+    "question_id": "qst_0026",
+    "question_type": "basic"
+  },
+  {
+    "expected_doc_ids": [
+      "dsid_b395ebb516614698bcd038cdb7933d4b"
+    ],
+    "question": "In the negotiation where a healthcare customer pushed for stronger protection against outside patent or copyright lawsuits for an AI hosting service, what dollar limit did the vendor propose per claim as the compromise?",
+    "question_id": "qst_0219",
+    "question_type": "semantic"
+  },
+  {
+    "expected_doc_ids": [
+      "dsid_c6a07633c306457ca67a9d7bd9fb8001"
+    ],
+    "question": "When using the python async batching helper for embeddings then rerank, what singleton-wrapped rerank response shape can show up during auth refresh, and what redwood.utils normalizer did the sampleapp add to fix the output shape?",
+    "question_id": "qst_0305",
+    "question_type": "intra_document_reasoning"
+  },
+  {
+    "expected_doc_ids": [
+      "dsid_0c504258cd0c432d898e6711fb90eaf6",
+      "dsid_5cd60d30f77441c082187f1a47547637",
+      "dsid_6a29c54058c041cf8db781f195e6b1cc"
+    ],
+    "question": "After the Northwind latency spike, what metric wording ended up approved for the public case study and what exactly can Sales share privately without triggering new legal approval?",
+    "question_id": "qst_0346",
+    "question_type": "project_related"
+  },
+  {
+    "expected_doc_ids": [
+      "dsid_f70e8011de994a9d956fca708445fb5e"
+    ],
+    "question": "In a private VPC deployment using SSO via our identity-proxy, what caused the intermittent 403 RBAC denials that occurred right after an IdP group membership sync for users who were already logged in (and were fixed by logging out/in), and what mitigation plus long-term server-side fix did we apply?",
+    "question_id": "qst_0387",
+    "question_type": "constrained"
+  },
+  {
+    "expected_doc_ids": [
+      "dsid_89c0c31e220c4777b15c3c6ff0eff61d",
+      "dsid_a2bf755670ad44e09b42c11e9d73e5d3"
+    ],
+    "question": "For extraction, what price-normalization correctness is reported at temp=0.0 with strict JSON + canonicalization, and what earlier % is it compared to?",
+    "question_id": "qst_0412",
+    "question_type": "conflicting_info"
+  },
+  {
+    "expected_doc_ids": [
+      "dsid_1f781623f5c14b3686b1129d19b73884",
+      "dsid_8f6063b780784a139de5c4d5afa49eb2",
+      "dsid_d04ead3e1e2d4c9f9cd34c73dca30b5d",
+      "dsid_81f6e00a9f474941ab5c123a64b0b80e",
+      "dsid_3986d90d7a5348048d989c17fe8dfd83",
+      "dsid_9d923c50817b4989b96dad5c7ad7c8a8"
+    ],
+    "question": "In Q4 2025, which customer industry segment was featured in the most published customer stories (case studies + one-page success stories)?",
+    "question_id": "qst_0434",
+    "question_type": "completeness"
+  },
+  {
+    "expected_doc_ids": [
+      "dsid_6279854275e44cce9115af8286fdf38b"
+    ],
+    "question": "Who owns the messy go-to-market misc assets dump with placeholder marketing files and micro-copy ideas created during a last-minute scramble before a partner call?",
+    "question_id": "qst_0452",
+    "question_type": "miscellaneous"
+  },
+  {
+    "expected_doc_ids": [],
+    "question": "What is Redwood Inference's mission statement?",
+    "question_id": "qst_0471",
+    "question_type": "high_level"
+  },
+  {
+    "expected_doc_ids": [],
+    "question": "What exact queue-depth threshold and prefill/decode interleaving-ratio cutoffs are currently configured in production to allow FP8 attention in **decode** on H100 hosted pools (i.e., the scheduler interaction guardrail mentioned in the FP8/INT8 kernel auto-selection heuristics)?",
+    "question_id": "qst_0482",
+    "question_type": "info_not_found"
+  }
+]

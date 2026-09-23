@@ -6,3 +6,6 @@ sentence-transformers
 faiss-cpu
 scikit-learn
 pytest>=8.3,<9
+
+pydantic>=2.10,<3
+anthropic>=0.49,<1

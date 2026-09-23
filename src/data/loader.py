@@ -1,15 +1,14 @@
 """Load and inspect EnterpriseRAG-Bench documents and questions."""
 
-from pathlib import Path
-
 from datasets import load_dataset
 
-
-DATASET_ID = "onyx-dot-app/EnterpriseRAG-Bench"
-CACHE_DIR = Path(__file__).resolve().parents[2] / ".cache" / "huggingface"
+from src.config import DATASET_ID, DATASET_REVISION, ROOT
 
 
-def load_enterprise_rag_bench(*, streaming: bool = True):
+CACHE_DIR = ROOT / ".cache" / "huggingface"
+
+
+def load_enterprise_rag_bench(*, streaming: bool = True, revision: str = DATASET_REVISION):
     """Return both test subsets; stream by default to avoid a full download."""
     return {
         name: load_dataset(
@@ -17,6 +16,7 @@ def load_enterprise_rag_bench(*, streaming: bool = True):
             name,
             split="test",
             streaming=streaming,
+            revision=revision,
             cache_dir=str(CACHE_DIR),
         )
         for name in ("documents", "questions")
