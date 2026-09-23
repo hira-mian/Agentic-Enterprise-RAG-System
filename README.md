@@ -102,14 +102,27 @@ Evaluating llamaindex_default on 2045 test queries -> results/llamaindex_default
   ...
 {
   "n": 2045,
-  "all@2": ...,
-  "hit@2": ...,
-  "recall@2": ...,
+  "all@2": 0.0504,
+  "n_all@2": 1804,          # retrieval metrics exclude the 241 null queries
+  "hit@2": 0.7145,
+  "mrr@2": 0.6599,
+  "recall@2": 0.3356,
+  "recall@10": 0.6425,
+  "latency_retrieval_s": 0.0801,
   ...
 }
 ```
 
-The full numbers are in [`docs/BASELINE_RESULTS.md`](docs/BASELINE_RESULTS.md).
+### Current results (test split)
+
+| System | Hit@2 | Recall@2 | All-evidence@2 | Recall@10 | Answer acc. |
+|---|---|---|---|---|---|
+| Majority (global) | — | — | — | — | 0.306 |
+| Majority (per question type) | — | — | — | — | 0.530 |
+| BM25, top-2 | 0.850 | 0.442 | 0.120 | 0.786 | pending LLM run |
+| LlamaIndex default (bge-base), top-2 | 0.715 | 0.336 | 0.050 | 0.642 | pending LLM run |
+
+The per-type breakdown, error analysis and next steps are in [`docs/BASELINE_RESULTS.md`](docs/BASELINE_RESULTS.md).
 
 ## Repository layout
 
