@@ -1,0 +1,65 @@
+{
+  "run": "majority_per_type__test",
+  "split": "test",
+  "config": {
+    "system": "majority_per_type",
+    "top_k": 0,
+    "fit_split": "dev",
+    "global_answer": "Yes",
+    "type_answer": {
+      "inference_query": "Sam Bankman-Fried",
+      "temporal_query": "Yes",
+      "null_query": "Insufficient information.",
+      "comparison_query": "Yes"
+    },
+    "eval_ks": [
+      2,
+      5,
+      10
+    ],
+    "llm_spec": "none",
+    "embed_spec": null
+  },
+  "overall": {
+    "n": 2045,
+    "accuracy": 0.5301,
+    "exact_match": 0.5301,
+    "latency_generation_s": 0.0,
+    "latency_retrieval_s": 0.0,
+    "token_f1": 0.5395
+  },
+  "by_question_type": {
+    "comparison_query": {
+      "n": 685,
+      "accuracy": 0.5985,
+      "exact_match": 0.5985,
+      "latency_generation_s": 0.0,
+      "latency_retrieval_s": 0.0,
+      "token_f1": 0.5985
+    },
+    "inference_query": {
+      "n": 653,
+      "accuracy": 0.3338,
+      "exact_match": 0.3338,
+      "latency_generation_s": 0.0,
+      "latency_retrieval_s": 0.0,
+      "token_f1": 0.3632
+    },
+    "null_query": {
+      "n": 241,
+      "accuracy": 1.0,
+      "exact_match": 1.0,
+      "latency_generation_s": 0.0,
+      "latency_retrieval_s": 0.0,
+      "token_f1": 1.0
+    },
+    "temporal_query": {
+      "n": 466,
+      "accuracy": 0.4614,
+      "exact_match": 0.4614,
+      "latency_generation_s": 0.0,
+      "latency_retrieval_s": 0.0,
+      "token_f1": 0.4614
+    }
+  }
+}

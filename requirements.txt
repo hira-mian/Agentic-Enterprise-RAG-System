@@ -1,0 +1,16 @@
+# Core framework (LlamaIndex default RAG pipeline)
+llama-index-core==0.14.25
+llama-index-retrievers-bm25==0.8.0
+PyStemmer==2.2.0.3
+
+# Embedding backends
+llama-index-embeddings-fastembed==0.7.0
+fastembed==0.8.1
+llama-index-embeddings-openai==0.7.0
+
+# LLM backends
+llama-index-llms-openai==0.8.1
+llama-index-llms-ollama==0.11.0
+
+# Tests
+pytest

@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Raw data is downloaded by scripts/download_data.py (checksum-verified), not committed.
+data/raw/
+# Persisted vector indexes and local model caches.
+storage/
+models/
+.env
