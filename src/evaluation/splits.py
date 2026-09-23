@@ -1,6 +1,7 @@
-"""Seeded grouped question splits; reference content is never used for tuning here."""
-from collections import Counter
+"""Split questions while keeping shared references and duplicate questions together."""
+
 import random
+from collections import Counter
 
 
 def build_splits(questions: list[dict], seed: int = 5980) -> dict:
@@ -32,20 +33,23 @@ def build_splits(questions: list[dict], seed: int = 5980) -> dict:
     groups = list(groups.values())
     random.Random(seed).shuffle(groups)
     groups.sort(key=len, reverse=True)
-    fractions = {"development": .6, "calibration": .2, "final": .2}
+    fractions = {"development": 0.6, "calibration": 0.2, "final": 0.2}
     totals = Counter(q["question_type"] for q in questions)
     counts = {name: Counter() for name in fractions}
     output = {name: [] for name in fractions}
     for group in groups:
         addition = Counter(q["question_type"] for q in group)
 
-        def delta(name):
-            return sum(((counts[name][cat] + n - totals[cat]*fractions[name])**2
-                        - (counts[name][cat] - totals[cat]*fractions[name])**2)
-                       / max(totals[cat]*fractions[name], 1)
-                       for cat, n in addition.items())
+        def balance_cost(name):
+            cost = 0.0
+            for category, count in addition.items():
+                target = totals[category] * fractions[name]
+                before = counts[name][category] - target
+                after = before + count
+                cost += (after**2 - before**2) / max(target, 1)
+            return cost
 
-        name = min(fractions, key=delta)
+        name = min(fractions, key=balance_cost)
         output[name].extend(q["question_id"] for q in group)
         counts[name].update(addition)
     for values in output.values():
@@ -54,11 +58,18 @@ def build_splits(questions: list[dict], seed: int = 5980) -> dict:
     dev_ids = set(output["development"])
     golden = []
     for category in sorted(totals):
-        candidates = [q["question_id"] for q in questions
-                      if q["question_type"] == category and q["question_id"] in dev_ids]
+        candidates = [
+            q["question_id"]
+            for q in questions
+            if q["question_type"] == category and q["question_id"] in dev_ids
+        ]
         random.Random(f"{seed}:{category}").shuffle(candidates)
         golden.extend(candidates[:6])
-    return {"version": 1, "seed": seed,
-            "method": "reference-document/duplicate-text groups; greedy category balance 60/20/20",
-            "splits": output, "slice_counts": {k: dict(sorted(v.items())) for k,v in counts.items()},
-            "golden_development_ids": sorted(golden)}
+    return {
+        "version": 1,
+        "seed": seed,
+        "method": "reference-document/duplicate-text groups; greedy category balance 60/20/20",
+        "splits": output,
+        "slice_counts": {k: dict(sorted(v.items())) for k, v in counts.items()},
+        "golden_development_ids": sorted(golden),
+    }

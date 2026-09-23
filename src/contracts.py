@@ -1,4 +1,5 @@
 """Version 1 boundary schemas; authorization must also be enforced by adapters."""
+
 from typing import Annotated, Literal, Protocol
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
@@ -41,6 +42,7 @@ class Chunk(Contract):
 
 class UserContext(Contract):
     """Server-resolved scope; empty/unknown identity denies everything."""
+
     user_id: Identifier | None = None
     role: str | None = None
     department: str | None = None
@@ -53,6 +55,7 @@ class UserContext(Contract):
 
 class QueryRequest(Contract):
     """Public API input: clients cannot supply identity or permission claims."""
+
     question: Identifier
     mode: Literal["baseline", "agentic"] = "baseline"
 
@@ -120,7 +123,9 @@ class Trace(Contract):
     steps: tuple[TraceStep, ...] = ()
     total_latency_ms: Nonnegative = 0
     usage: Usage = Field(default_factory=Usage)
-    stop_reason: Literal["sufficient", "round_limit", "no_new_evidence", "budget", "error", "single_pass"]
+    stop_reason: Literal[
+        "sufficient", "round_limit", "no_new_evidence", "budget", "error", "single_pass"
+    ]
 
 
 class Answer(Contract):

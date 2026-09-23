@@ -1,45 +1,37 @@
-# Shared contracts (v1)
+# Shared contracts
 
-`src/contracts.py` defines validated Pydantic models and synchronous Python
-protocols. Unknown fields are rejected; models are frozen. JSON fixtures in
-`tests/fixtures/contracts.json` are invented test data, not benchmark evidence.
+`src/contracts.py` defines Pydantic models and Python interfaces. Models reject
+unknown fields. Examples in `tests/fixtures/contracts.json` use invented data.
 
-| Boundary | Contract |
+| Model | Purpose |
 | --- | --- |
-| Ingestion | `Document`: original ID, source, title, content; optional timestamp |
-| Chunking | `Chunk`: stable ID, parent document, original character offsets, text |
-| Identity | `UserContext`: server-resolved identity, relevance context, allowed document IDs |
-| Public input | `QueryRequest`: question and baseline/agentic mode only |
-| Retrieval | `SearchRequest` → tuple of `Evidence` through `Retriever.search` |
-| Structured lookup | `ToolRequest` → `ToolResult` through `StructuredTool.execute` |
-| Critique | `GenerationRequest` → decision and usage through `SearchCritic.assess` |
-| Generation | `GenerationRequest` → answer and usage through `Generator.generate` |
-| Public output | `QueryResponse`: answer, cited evidence, trace |
+| `Document`, `Chunk` | Source text, IDs, metadata, and character offsets |
+| `UserContext` | Server-resolved identity and allowed document IDs |
+| `QueryRequest` | Public input: question and baseline/agentic mode |
+| `SearchRequest`, `Evidence` | Retrieval filters and ranked passages |
+| `ToolRequest`, `ToolResult` | Structured lookups and counts |
+| `GenerationRequest` | Question and authorized evidence for generation or critique |
+| `CriticDecision` | Evidence sufficiency, confidence, and suggested searches |
+| `Answer`, `QueryResponse` | Answer, citations, sources, and trace |
+| `Usage`, `TraceStep`, `Trace` | Calls, tokens, cost, timings, and search history |
 
-Authorization is not inferred from role or department. Empty scope or missing
-identity denies access. Adapters must filter candidates before returning evidence
-and call `validate_evidence` before reranking, critique, generation, or exposure.
-`GenerationRequest` enforces this check. Public responses still require a
-server-side scope check; schema validation alone is not authentication.
-Full benchmark evaluation uses an explicit synthetic benchmark identity with
-all indexed document IDs allowed. Record this policy separately from access tests.
+Retrievers implement `search`, structured tools `execute`, generators `generate`,
+and critics `assess`. Their signatures are defined at the end of the module.
 
-Chunk offsets are half-open Python character indices into the original content.
-Create IDs from document ID, offsets, and chunking version. Citation IDs must be
-unique within a response and resolve to supplied evidence. Validation checks
-citation existence, not whether the cited text actually supports the claim.
-Unknown timestamps remain null; supplied timestamps require timezone offsets. Never infer recency from source order.
+## Rules
 
-Tool adapters must allowlist supported filters, scope rows before aggregation,
-and return a validation error for unsupported fields. The request schema does
-not implement a database or arbitrary query execution.
+- Missing identity or empty permissions denies access. Roles and departments do
+  not grant access. Filter candidates before returning evidence; call
+  `validate_evidence` before exposing results. `GenerationRequest` checks scope.
+- Chunk offsets are half-open character indices into the original text. Unknown
+  timestamps are null; supplied timestamps need a timezone.
+- Citation IDs must be unique and resolve to supplied evidence. This validates
+  references, not whether the evidence supports each claim.
+- Tool adapters must validate supported filters and apply permissions before
+  aggregation. The tool interfaces do not implement storage or authentication.
+- Trace totals include generation and retries. Do not add totals to step usage
+  again. Unknown cost is null. Keep credentials and benchmark answers out of
+  runtime requests and traces.
 
-Trace steps record queries, tools, evidence IDs, critic decisions, elapsed time,
-and per-step usage. Final trace usage includes generation and retries as well as
-search/critic calls; do not add totals to step counters twice. Unknown costs are
-null. Traces must not contain credentials and must respect the user's scope.
-
-`src/config.py` provides dataset revision and bounded defaults. Paid calls default
-to a zero-dollar budget. These are configuration contracts, not an implemented
-budget-enforcement loop. Never send benchmark reference answers to these runtime
-interfaces. Team review is still needed before downstream implementation.
+`src/config.py` pins dataset/model revisions and defines defaults. Generation
+settings and budget enforcement are in `src/generation/generator.py`.

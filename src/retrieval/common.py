@@ -1,6 +1,7 @@
 """Shared scoped retrieval and JSON persistence helpers."""
-from hashlib import sha256
+
 import json
+from hashlib import sha256
 from pathlib import Path
 
 from src.contracts import Chunk, Evidence, SearchRequest, validate_evidence
@@ -28,21 +29,34 @@ def eligible(chunk: Chunk, request: SearchRequest) -> bool:
 
 
 def evidence_for(chunks, scores, request, method):
-    ranked = sorted(zip(chunks, scores), key=lambda pair: (-float(pair[1]), pair[0].chunk_id))
-    results = tuple(Evidence(citation_id=c.chunk_id, chunk=c, score=float(score),
-                             retrieval_method=method)
-                    for c,score in ranked[:request.top_k])
+    ranked = sorted(
+        zip(chunks, scores), key=lambda pair: (-float(pair[1]), pair[0].chunk_id)
+    )
+    results = tuple(
+        Evidence(
+            citation_id=c.chunk_id, chunk=c, score=float(score), retrieval_method=method
+        )
+        for c, score in ranked[: request.top_k]
+    )
     validate_evidence(request.user, results)
     return results
 
 
 def save_metadata(path: Path, chunks, method: str, config: dict, provenance: dict):
     path.mkdir(parents=True, exist_ok=True)
-    payload = "".join(c.model_dump_json()+"\n" for c in chunks)
+    payload = "".join(c.model_dump_json() + "\n" for c in chunks)
     (path / "chunks.jsonl").write_text(payload)
-    manifest = {"version":1, "method":method, "config":config, "provenance":provenance,
-                "chunk_count":len(chunks), "chunks_sha256":sha256(payload.encode()).hexdigest()}
-    (path / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True)+"\n")
+    manifest = {
+        "version": 1,
+        "method": method,
+        "config": config,
+        "provenance": provenance,
+        "chunk_count": len(chunks),
+        "chunks_sha256": sha256(payload.encode()).hexdigest(),
+    }
+    (path / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n"
+    )
     return manifest
 
 

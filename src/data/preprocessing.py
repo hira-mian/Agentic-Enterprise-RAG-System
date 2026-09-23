@@ -1,4 +1,5 @@
 """Deterministic character chunks that preserve original evidence and offsets."""
+
 from hashlib import sha256
 from typing import Iterable
 
@@ -19,7 +20,9 @@ class ChunkingConfig(Contract):
         return self
 
 
-def chunk_document(document: Document, config: ChunkingConfig | None = None) -> list[Chunk]:
+def chunk_document(
+    document: Document, config: ChunkingConfig | None = None
+) -> list[Chunk]:
     config = config or ChunkingConfig()
     output = []
     start = 0
@@ -29,18 +32,28 @@ def chunk_document(document: Document, config: ChunkingConfig | None = None) -> 
         if text.strip():
             signature = f"{config.version}:{config.size}:{config.overlap}:{text}"
             digest = sha256(signature.encode()).hexdigest()[:16]
-            output.append(Chunk(chunk_id=f"{document.doc_id}:{start}:{end}:{digest}",
-                                doc_id=document.doc_id, source_type=document.source_type,
-                                title=document.title, metadata_origin=document.metadata_origin,
-                                text=text, start_char=start, end_char=end,
-                                timestamp=document.timestamp))
+            output.append(
+                Chunk(
+                    chunk_id=f"{document.doc_id}:{start}:{end}:{digest}",
+                    doc_id=document.doc_id,
+                    source_type=document.source_type,
+                    title=document.title,
+                    metadata_origin=document.metadata_origin,
+                    text=text,
+                    start_char=start,
+                    end_char=end,
+                    timestamp=document.timestamp,
+                )
+            )
         if end == len(document.content):
             break
         start = end - config.overlap
     return output
 
 
-def chunk_documents(documents: Iterable[Document], config: ChunkingConfig | None = None) -> list[Chunk]:
+def chunk_documents(
+    documents: Iterable[Document], config: ChunkingConfig | None = None
+) -> list[Chunk]:
     seen = set()
     result = []
     for document in documents:

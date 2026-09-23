@@ -1,9 +1,8 @@
 # Agentic RAG for Enterprise Knowledge Search
 
-A course project for searching enterprise knowledge and generating answers with
-sources. Includes a dataset audit, shared contracts, BM25/dense retrieval, a generation
-adapter, and retrieval metrics. The full evaluation runner and agents are not
-implemented yet.
+A course project for searching enterprise documents and answering with sources.
+Implemented: dataset audit, BM25/dense retrieval, a generation adapter, and
+retrieval metrics. Agents and the full evaluation runner are still planned.
 
 [GitHub repository](https://github.com/hira-mian/Agentic-Enterprise-RAG-System)
 
@@ -29,9 +28,8 @@ hosted LLM API, and React.
 Use Python 3.11:
 
 ```sh
-python3 -m venv .venv
+python3.11 -m venv .venv
 source .venv/bin/activate
-python --version
 python -m pip install -r requirements.txt
 python -m pytest
 ```
@@ -44,9 +42,6 @@ Inspect dataset schemas and one sample per subset (requires internet):
 ```sh
 python -m src.data.loader
 ```
-
-Starter modules live in `src/{data,retrieval,agents,generation,evaluation,api}`.
-Use `notebooks/exploration.ipynb` for exploration with the project environment.
 
 ## Data and evaluation setup
 
@@ -82,7 +77,7 @@ See [Contributing](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Team
 
-Jane Choi, Hira Mian. Additional members: TBD.
+Hira Mian, Jane Choi, and Alexander Xykis.
 
 ## License
 

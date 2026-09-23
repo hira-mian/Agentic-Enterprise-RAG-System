@@ -1,109 +1,99 @@
-# Evaluation protocol (v1)
+# Evaluation protocol
 
-Status: protocol, splits, baseline retrievers, generation adapter, and retrieval
-metrics are implemented. The full evaluation runner and answer-quality scoring
-remain later tickets; no benchmark scores are claimed.
+Retrievers, generation adapter, splits, and retrieval metrics are implemented.
+The full runner and answer scoring remain to be built. No benchmark results yet.
 
-## Question sets
+## Data splits
 
-Use the pinned revision in `src/config.py` and IDs in `evaluation/splits.json`.
-The upstream split is named `test`; our partitions are project-specific, not
-additional official benchmark splits. We are not training a model, so there is
-no training set. Do not put this benchmark into model-training data.
+Use the revision in `src/config.py` and frozen IDs in `evaluation/splits.json`.
+These are our partitions of the upstream `test` split:
 
-Allocate approximately 60% development, 20% critic calibration, and 20% final.
-Seed 5980. Group shared reference-document IDs (including transitive overlap) and
-identical normalized question text before assignment. Greedily balance question
-categories across splits; group integrity takes priority over exact percentages.
-This reduces known leakage but cannot detect every shared project or near-duplicate.
+| Set | Questions | Use |
+| --- | --- | --- |
+| Development | 300 | Baselines, debugging, and model selection |
+| Calibration | 100 | Critic thresholds and evidence-sufficiency labels |
+| Final | 100 | Evaluation after settings are frozen |
 
-The generated split contains 300 development, 100 calibration, and 100 final
-questions. The development golden set takes up to six questions per category
-(60 total); `evaluation/development_examples.json` shows one per category. Use it for
-quick regression checks and the full development set for baseline tables.
-Calibration is for critic thresholds and manually labeled sufficiency examples.
-Keep final answers and outcomes out of iterative review; inspect final results
-only after settings are frozen. Version new splits explicitly rather than silently
-replacing the committed manifest. Documents are the shared search corpus, not
-model-training examples; question labels are only available to the evaluator.
+Seed: 5980. Questions sharing reference documents or identical normalized text
+stay together, including transitive overlap. Assignment balances question types
+at a target ratio of 60/20/20; keeping groups intact takes priority. Other shared
+projects and near-duplicates may still cross splits.
 
-## Comparisons
+The development regression set contains six questions per category (60 total).
+`evaluation/development_examples.json` includes one per category. Use the full
+development set for baseline tables. Version changes to splits; do not tune on
+final outcomes. Documents form a shared search corpus. Reference answers belong
+only in the evaluator. We do not train a model or use benchmark data for training.
 
-Initial systems: BM25+-only and pretrained BGE-small dense-only retrieval, using
-identical corpus, question IDs, generator/prompt, top-k, context budget, and access
-policy. Hybrid/reranking and agentic search follow later. Record model revisions,
-code commit, dependency versions, seed, corpus hash, and configuration per run.
-Our scores are project comparisons, not official leaderboard reproductions.
+## Baselines
+
+Compare BM25+ and pretrained BGE-small dense retrieval with the same corpus,
+questions, generator/prompt, top-k, context budget, and access policy. Add hybrid
+retrieval and agentic search later. Record code commit, model/dependency versions,
+seed, corpus hash, and settings. These are project comparisons, not official
+leaderboard reproductions.
 
 ## Metrics
 
-| Metric | Definition and interpretation |
+| Metric | Definition |
 | --- | --- |
-| Recall@5/10/20 | Per question, relevant unique documents in the first k unique document hits divided by all labeled relevant documents; then macro-average. |
-| nDCG@10 | Binary relevance; DCG = sum(rel_i / log2(i+1)), divided by ideal DCG for min(10, number of relevant documents). Measures ranking quality. |
-| Correctness | Fraction judged free of substantive factual errors against the reference and evidence; inappropriate abstention on answerable questions fails. |
-| Completeness | Fraction of reference answer facts correctly covered, macro-averaged over questions with answer facts. Report empty-fact exclusions. |
-| Citation support | Supported factual claims / factual claims, assessed against cited passages. No factual claims means N/A, not perfect support. |
-| Abstention | Separately report abstention rate on labeled unanswerable questions and unnecessary abstention rate on answerable questions. |
-| Efficiency | Median/p95 end-to-end latency, API calls, input/output tokens, estimated USD/query, and search rounds. Include retries; report errors/timeouts separately. |
+| Recall@5/10/20 | Relevant documents retrieved / all labeled relevant documents, averaged per question |
+| nDCG@10 | Binary relevance: sum(rel_i / log2(i+1)), divided by ideal DCG |
+| Correctness | Fraction of answers without substantive factual errors; unjustified abstention fails |
+| Completeness | Fraction of reference answer facts correctly covered, averaged per question |
+| Citation support | Supported factual claims / factual claims |
+| Abstention | Report correct abstention on unanswerable questions and unnecessary abstention separately |
+| Efficiency | Median/p95 latency, API calls, tokens, USD/query, and search rounds, including retries |
 
-Deduplicate chunks by parent document, preserving the first rank before applying k.
-Questions with no relevant-document IDs are N/A for retrieval metrics; report their
-count. Missing labels do not by themselves mean unanswerable: use the benchmark's
-question category and manual review. Never remove missing corpus documents from
-the recall denominator. Report corpus coverage alongside reduced-corpus scores.
-Run errors get zero on eligible quality metrics, with counts visible; do not drop
-them from averages. Cost reports identify pricing assumptions and separate judge
-cost from serving cost. Unknown token/cost data stays missing, not zero.
+Scoring rules:
 
-Report overall and per-question-category scores with sample counts. Also slice by
-one versus multiple reference documents and one versus multiple reference sources;
-source slices can overlap. Small slices support examples, not strong significance
-claims. Later comparisons should use paired per-question differences and confidence
-intervals; do not claim gains from a few selected examples.
+- Deduplicate chunks by document ID, preserving first rank, before applying k.
+- No relevant-document IDs means N/A for retrieval metrics. No answer facts means
+  N/A for completeness; no factual claims means N/A for citation support. Report
+  exclusion counts. Empty relevance labels alone do not establish unanswerability.
+- Keep missing corpus documents in recall denominators and report corpus coverage.
+- Eligible error rows score zero; count errors/timeouts instead of dropping them.
+- Separate judge cost from serving cost, state prices, and mark unknown usage.
+- Report category scores and counts, plus single/multiple-document and source
+  slices. Source slices may overlap. Use paired differences and confidence
+  intervals for later comparisons; avoid strong conclusions from small slices.
 
-## Qualitative rubric
+## Answer rubric
 
-Score each dimension 0, 1, or 2 independently. A usable answer needs 2 on every
-applicable dimension. Report dimensions separately; do not hide factual errors
-behind an average score.
+Score each applicable dimension separately from 0 to 2. A usable answer needs 2
+on each; an average should not conceal factual errors.
 
 | Dimension | 0 | 1 | 2 |
 | --- | --- | --- | --- |
-| Correctness | Wrong central claim or contradiction | Main answer right, but a substantive detail is wrong or unverifiable | All substantive claims correct |
-| Completeness | Misses the main requested information | Addresses the question but omits required facts/qualifications | Covers required facts, constraints, and material conflicts |
-| Citation support | No valid support for central claims | Some factual claims unsupported or cited ambiguously | Every factual claim supported by identifiable cited evidence |
-| Abstention/limits | Confident unsupported answer or unwarranted refusal | Signals uncertainty but misses the key evidence limitation | Answers when justified; otherwise clearly identifies missing/conflicting evidence |
+| Correctness | Wrong central claim | Main answer right, substantive detail wrong or unverifiable | All substantive claims correct |
+| Completeness | Main information missing | Required details missing | Required facts, constraints, and conflicts covered |
+| Citation support | Central claims unsupported | Some claims unsupported or ambiguously cited | Every factual claim supported by its citation |
+| Abstention/limits | Unsupported answer or unjustified refusal | Uncertainty noted, key limitation missed | Answers when justified; explains missing/conflicting evidence otherwise |
 
 Two reviewers independently score 20 development examples, including successes,
-failures, and boundary cases. Record initial exact agreement per dimension, resolve
-disagreements, and preserve the adjudicated anchor set. Compare any LLM judge to
-both human ratings; log judge model/prompt versions and reasons. Proposed gate:
-at least 80% exact agreement per dimension on this small anchor set before using
-judge scores at scale; otherwise refine the rubric. This is a process threshold,
-not statistical proof of reliability. Never use the online Search Critic as the
-sole evaluator of its own outputs.
+failures, and boundary cases. Record agreement by dimension, resolve differences,
+and keep the adjudicated examples as an anchor set. Compare any LLM judge against
+these labels; record its model, prompt, and reasons. Proposed acceptance: 80%
+exact agreement per dimension before scaling up. This small-sample threshold is
+for calibration, not proof of reliability. The Search Critic must not be its own
+sole evaluator.
 
-## Behavior checks and error analysis
+## Error analysis
 
-Invariants: valid response schema, citations resolve, and no out-of-scope evidence.
-Any observed access leak or invalid citation fails that check. Access tests use
-explicit synthetic permission fixtures, separate from benchmark quality scores.
-Schema/citation checks do not establish semantic faithfulness.
+Check schema validity, citation references, and permissions separately from answer
+quality. Any invalid citation or access leak fails its check. Access tests use
+synthetic permissions, separate from benchmark scores.
 
-Inspect 20–30 failed development examples (or all if fewer). Record question ID,
-baseline/run ID, retrieved IDs/ranks, selected context, answer, failed dimension,
-evidence for the suspected cause, proposed fix, and owner. Group three to five
-recurring patterns only when observed: missing corpus evidence, retrieval miss,
-wrong chunk, generation error, or inappropriate abstention. Keep competing causes
-when uncertain. This selected sample is not a population failure-rate estimate.
-Later add critic false-sufficient/false-insufficient confusion counts and useful
-versus redundant search rounds. Evaluate each fix on the same development set.
+Inspect 20–30 failed development examples, or all if fewer. Record question/run
+IDs, ranked evidence, selected context, answer, failed dimension, suspected cause,
+proposed fix, and owner. Identify three to five recurring patterns when supported:
+missing corpus evidence, retrieval miss, wrong chunk, generation error, or bad
+abstention. Note uncertainty; a selected failure sample cannot estimate overall
+failure rates. Later add critic confusion counts and useful/redundant search
+rounds. Evaluate fixes on the same development set.
 
-## Milestone 2 gate
+## Milestone 2
 
-Data Card, working baseline harness, two measured baseline tables, rubric and
-human validation, initial failure analysis, README commands/output, and TA check-in.
-The current audit command is not the evaluation harness. No quality threshold is
-claimed before measurements; report both positive and negative comparisons.
-A3 reranking and B3 critic are not prerequisites for this checkpoint.
+Deliver the Data Card, runnable harness, two baseline tables, validated rubric,
+failure analysis, README commands/output, and TA check-in. The audit command only
+prepares data. Hybrid reranking and the critic are not required for this checkpoint.

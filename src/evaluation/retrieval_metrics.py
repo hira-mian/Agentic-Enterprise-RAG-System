@@ -1,4 +1,5 @@
 """Document-level binary relevance metrics; unlabeled questions return None."""
+
 from collections.abc import Iterable
 from math import log2
 from statistics import mean
@@ -9,11 +10,13 @@ def ranked_documents(doc_ids: Iterable[str]) -> list[str]:
 
 
 def _validate_k(k):
-    if isinstance(k,bool) or not isinstance(k,int) or k < 1:
+    if isinstance(k, bool) or not isinstance(k, int) or k < 1:
         raise ValueError("k must be a positive integer")
 
 
-def recall_at_k(retrieved_doc_ids: Iterable[str], relevant_doc_ids: Iterable[str], k=10):
+def recall_at_k(
+    retrieved_doc_ids: Iterable[str], relevant_doc_ids: Iterable[str], k=10
+):
     _validate_k(k)
     relevant = set(relevant_doc_ids)
     if not relevant:
@@ -27,12 +30,16 @@ def ndcg_at_k(retrieved_doc_ids: Iterable[str], relevant_doc_ids: Iterable[str],
     relevant = set(relevant_doc_ids)
     if not relevant:
         return None
-    dcg = sum(1/log2(rank+2) for rank,doc in enumerate(ranked_documents(retrieved_doc_ids)[:k]) if doc in relevant)
-    ideal = sum(1/log2(rank+2) for rank in range(min(k,len(relevant))))
+    dcg = sum(
+        1 / log2(rank + 2)
+        for rank, doc in enumerate(ranked_documents(retrieved_doc_ids)[:k])
+        if doc in relevant
+    )
+    ideal = sum(1 / log2(rank + 2) for rank in range(min(k, len(relevant))))
     return dcg / ideal
 
 
-def evaluate_retrieval(rows: Iterable[dict], ks=(5,10,20)) -> dict:
+def evaluate_retrieval(rows: Iterable[dict], ks=(5, 10, 20)) -> dict:
     """Rows: question_id, relevant_doc_ids, retrieved_doc_ids, question_type, error.
 
     Pass doc IDs in chunk-hit order; repeated chunks collapse to the first hit.
@@ -44,42 +51,60 @@ def evaluate_retrieval(rows: Iterable[dict], ks=(5,10,20)) -> dict:
         raise ValueError("Specify distinct k values")
     for k in ks:
         _validate_k(k)
-    if len({r['question_id'] for r in rows}) != len(rows):
+    if len({r["question_id"] for r in rows}) != len(rows):
         raise ValueError("Duplicate question IDs")
     results = []
     for row in rows:
         predictions = [] if row.get("error") else row["retrieved_doc_ids"]
-        result = {"question_id":row["question_id"], "question_type":row["question_type"],
-                  "error":bool(row.get("error"))}
+        result = {
+            "question_id": row["question_id"],
+            "question_type": row["question_type"],
+            "error": bool(row.get("error")),
+        }
         for k in ks:
-            result[f"recall@{k}"] = recall_at_k(predictions,row["relevant_doc_ids"],k)
-            result[f"ndcg@{k}"] = ndcg_at_k(predictions,row["relevant_doc_ids"],k)
+            result[f"recall@{k}"] = recall_at_k(predictions, row["relevant_doc_ids"], k)
+            result[f"ndcg@{k}"] = ndcg_at_k(predictions, row["relevant_doc_ids"], k)
         results.append(result)
 
     def summarize(group):
-        values = {"questions":len(group), "errors":sum(r['error'] for r in group)}
-        for key in [f"{metric}@{k}" for k in ks for metric in ("recall","ndcg")]:
+        values = {"questions": len(group), "errors": sum(r["error"] for r in group)}
+        for key in [f"{metric}@{k}" for k in ks for metric in ("recall", "ndcg")]:
             scores = [r[key] for r in group if r[key] is not None]
-            values[key] = {"mean":mean(scores) if scores else None, "scored":len(scores),
-                           "excluded":len(group)-len(scores)}
+            values[key] = {
+                "mean": mean(scores) if scores else None,
+                "scored": len(scores),
+                "excluded": len(group) - len(scores),
+            }
         return values
 
-    return {"overall":summarize(results),
-            "slices":{category:summarize([r for r in results if r['question_type']==category])
-                      for category in sorted({r['question_type'] for r in results})},
-            "per_question":results}
+    return {
+        "overall": summarize(results),
+        "slices": {
+            category: summarize([r for r in results if r["question_type"] == category])
+            for category in sorted({r["question_type"] for r in results})
+        },
+        "per_question": results,
+    }
 
 
 def main():
     import argparse
     import json
     from pathlib import Path
+
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--input', type=Path, required=True, help='JSONL predictions with reference document IDs')
+    parser.add_argument(
+        "--input",
+        type=Path,
+        required=True,
+        help="JSONL predictions with reference document IDs",
+    )
     args = parser.parse_args()
-    rows = [json.loads(line) for line in args.input.read_text().splitlines() if line.strip()]
+    rows = [
+        json.loads(line) for line in args.input.read_text().splitlines() if line.strip()
+    ]
     print(json.dumps(evaluate_retrieval(rows), indent=2))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

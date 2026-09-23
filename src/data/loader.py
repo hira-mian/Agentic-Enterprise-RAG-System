@@ -4,11 +4,12 @@ from datasets import load_dataset
 
 from src.config import DATASET_ID, DATASET_REVISION, ROOT
 
-
 CACHE_DIR = ROOT / ".cache" / "huggingface"
 
 
-def load_enterprise_rag_bench(*, streaming: bool = True, revision: str = DATASET_REVISION):
+def load_enterprise_rag_bench(
+    *, streaming: bool = True, revision: str = DATASET_REVISION
+):
     """Return both test subsets; stream by default to avoid a full download."""
     return {
         name: load_dataset(

@@ -1,4 +1,5 @@
 """Shared defaults. Model and budget choices must be recorded with each run."""
+
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -18,6 +19,7 @@ class Settings(BaseModel):
     timeout_seconds: float = Field(default=60, gt=0)
     max_tokens: int = Field(default=8000, ge=1)
     max_cost_usd: float = Field(default=0, ge=0)  # Paid calls disabled by default.
+
 
 EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
 EMBEDDING_REVISION = "5c38ec7c405ec4b44b94cc5a9bb96e735b38267a"

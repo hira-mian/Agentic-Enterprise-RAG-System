@@ -1,67 +1,57 @@
 # Data Card: EnterpriseRAG-Bench
 
-## Source and access
+## Source and license
 
-We use Onyx's synthetic Redwood Inference enterprise benchmark, accessed through
-Hugging Face `datasets`. The upstream card lists 500 questions and over 500,000
-documents across enterprise-like sources. These are simulated records, not our
-team's private company data. See the [upstream card](https://huggingface.co/datasets/onyx-dot-app/EnterpriseRAG-Bench)
-and [release repository](https://github.com/onyx-dot-app/EnterpriseRAG-Bench).
+[EnterpriseRAG-Bench](https://huggingface.co/datasets/onyx-dot-app/EnterpriseRAG-Bench)
+is Onyx's synthetic enterprise dataset about a fictional company, Redwood
+Inference. The upstream card reports over 500,000 documents and 500 questions.
+We access its `documents` and `questions` subsets through Hugging Face `datasets`.
 
 Pinned revision: `69916e31c68aa5963c00248fd7f0bc12d04fd235`.
-The card metadata declares `mit`; the inspected dataset tree contains no separate
-LICENSE file. Preserve attribution and applicable license notices when distributing
-data. The card asks that benchmark data not enter training corpora. We use it for
-retrieval/evaluation only. Public reads succeeded without a token; network access
-and Hub rate limits still apply. No hosted LLM key is required for the audit.
+The card declares MIT licensing; the inspected dataset tree has no separate
+LICENSE file. Preserve attribution and applicable notices when distributing data.
+The card asks that benchmark data stay out of training corpora. Our use is
+retrieval and evaluation. Public reads worked without a token; network access
+and Hub rate limits apply.
 
-## Fields and provenance
+## Fields
 
-| Field group | Origin and constraints |
+| Data | Upstream fields |
 | --- | --- |
-| Document ID, source type, title, content | Upstream document columns; preserve IDs and original text |
-| Question ID/type, source types, question | Upstream question columns |
-| Expected document IDs, reference answer, answer facts | Upstream evaluation labels; never runtime agent inputs |
-| Chunk IDs and offsets | Derived locally during future preprocessing |
-| Timestamp, employee role, project membership, ACL, Jira/CRM fields | Not structured columns in the inspected schema; any extraction needs validation and provenance |
+| Documents | `doc_id`, `source_type`, `title`, `content` |
+| Questions | `question_id`, `question_type`, `source_types`, `question` |
+| Evaluation labels | `expected_doc_ids`, `gold_answer`, `answer_facts` |
 
-Text may mention dates or organizational details; we have not verified a complete
-employee directory, permission policy, or structured-record schema. Missing ACLs
-must not be interpreted as public access. Invented authorization fixtures must
-remain labeled synthetic and separate from benchmark measurements.
+Chunk IDs and offsets are generated locally. Timestamps, employee roles, project
+memberships, permissions, and Jira/CRM record fields are not structured columns
+in this schema. Extracted values need validation; missing permissions do not mean
+public access. Test permissions are explicitly synthetic.
 
-## Sampling, splits, and limits
+## Audit and splits
 
-`python -m src.data.audit` streams all question rows for split assignment and
-profiles the first 256 documents at the pinned revision. It saves raw data under
-ignored `.cache/audit/` and versioned summaries in `evaluation/`. This prefix is a
-repeatable inspection fixture, not a representative corpus or a ready-to-score
-benchmark. Per-development-question missing reference IDs are explicitly reported.
-Do not change relevance labels to hide missing evidence.
+Run `python -m src.data.audit` to inspect the first 256 documents and all question
+rows. Raw data goes to ignored `.cache/audit/`; summaries and split IDs go to
+`evaluation/`.
 
-Question partitions, grouping, rationale, and scoring rules are in
-[EVALUATION.md](EVALUATION.md); actual IDs and slice counts are in
-`evaluation/splits.json`. No parameter-training partition is created. Full-text
-labels remain in the ignored cache; development examples can be exported without
-opening final answers. The broader corpus must be built before credible baseline
-scores, or reduced-corpus results must be clearly labeled.
+Observed at the pinned revision:
 
-Known limits: synthetic-to-real domain mismatch, source/category imbalance,
-possible incomplete relevance labels, near-duplicate documents, conflicting text,
-and unknown freshness/access metadata. Our sample cannot estimate corpus-wide
-missingness or establish that every reference document exists in the full corpus.
-Use the audit's observed counts rather than treating reported upstream totals as
-an independent full-corpus verification.
+- All 256 sampled documents are Confluence records, with no empty core fields or
+  duplicate IDs. The prefix is not representative of the corpus.
+- All 500 question IDs are unique. Thirty questions have no reference document or
+  source IDs, including high-level and information-not-found questions.
+- The sample contains 10 of 442 development reference-document links. Only two
+  questions with relevance labels have all their reference documents present.
+- Question splits: 300 development, 100 calibration, 100 final; 60 development
+  questions form the regression set. See [evaluation protocol](EVALUATION.md)
+  for grouping and split rules. We do not train a model, so no training set exists.
 
-## Observed audit
+## Limitations
 
-- 256 document rows, all Confluence; no empty core fields or duplicate IDs.
-- 500 question rows; no duplicate question IDs. Thirty rows have empty reference
-  document/source lists. These include high-level and information-not-found cases;
-  empty relevance lists do not automatically mean an unanswerable question.
-- Development sample coverage: 10 of 442 reference-document links present;
-  only two questions with nonempty relevance labels have all references present.
-- Splits: 300 development / 100 calibration / 100 final, with 60 development
-  golden examples. Counts and IDs are in the committed evaluation artifacts.
+Synthetic data may not reflect real employee questions. Sources and question
+categories are imbalanced; documents may be duplicated or conflicting; relevance
+labels may be incomplete. Freshness and access metadata remain unverified.
 
-These findings describe the bounded audit, not full-corpus quality.
+The sample is for inspection. Build a larger corpus before baseline evaluation,
+or label results as reduced-corpus scores and report reference coverage. Keep
+missing reference documents in recall denominators. Sample findings do not
+establish corpus-wide missingness or quality.

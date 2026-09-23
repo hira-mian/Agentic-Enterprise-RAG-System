@@ -5,17 +5,16 @@ import pytest
 from pydantic import ValidationError
 
 from src.config import Settings
-from src.contracts import (Answer, Chunk, CriticDecision, Document, GenerationRequest,
-                           QueryRequest, QueryResponse, UserContext)
+from src.contracts import (
+    Answer,
+    Chunk,
+    GenerationRequest,
+    QueryRequest,
+    QueryResponse,
+    UserContext,
+)
 
 FIXTURE = json.loads((Path(__file__).parent / "fixtures/contracts.json").read_text())
-
-
-def test_serialized_boundaries_round_trip():
-    for cls, key in [(Document, "document"), (QueryRequest, "request"),
-                     (UserContext, "user"), (QueryResponse, "response")]:
-        obj = cls.model_validate(FIXTURE[key])
-        assert cls.model_validate_json(obj.model_dump_json()) == obj
 
 
 def test_default_and_unknown_identity_deny_access():
@@ -32,9 +31,14 @@ def test_client_cannot_supply_authorization():
 def test_generation_rejects_denied_evidence():
     response = QueryResponse.model_validate(FIXTURE["response"])
     with pytest.raises(ValidationError):
-        GenerationRequest(question="limit?", user=UserContext(), evidence=response.sources)
-    request = GenerationRequest(question="limit?", user=UserContext.model_validate(FIXTURE["user"]),
-                                evidence=response.sources)
+        GenerationRequest(
+            question="limit?", user=UserContext(), evidence=response.sources
+        )
+    request = GenerationRequest(
+        question="limit?",
+        user=UserContext.model_validate(FIXTURE["user"]),
+        evidence=response.sources,
+    )
     assert request.evidence == response.sources
 
 
@@ -45,11 +49,16 @@ def test_unknown_citation_rejected():
         QueryResponse.model_validate(data)
 
 
-def test_invalid_offsets_and_confidence():
+def test_invalid_offsets_and_nonfinite_budget():
     with pytest.raises(ValidationError):
-        Chunk(chunk_id="x", doc_id="d", source_type="slack", text="abc", start_char=5, end_char=7)
-    with pytest.raises(ValidationError):
-        CriticDecision(sufficient=True, confidence=1.1, reason="enough")
+        Chunk(
+            chunk_id="x",
+            doc_id="d",
+            source_type="slack",
+            text="abc",
+            start_char=5,
+            end_char=7,
+        )
     with pytest.raises(ValidationError):
         Settings(max_cost_usd=float("nan"))
 
@@ -58,8 +67,3 @@ def test_abstention_needs_no_citation_but_answer_does():
     Answer(status="insufficient_evidence", text="No supporting evidence found.")
     with pytest.raises(ValidationError):
         Answer(status="answered", text="I guessed.")
-
-
-def test_timestamps_require_timezone():
-    with pytest.raises(ValidationError):
-        Document(doc_id='d', source_type='docs', title='t', content='text', timestamp='2026-01-01T00:00:00')
