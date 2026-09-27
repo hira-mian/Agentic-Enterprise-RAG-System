@@ -1,8 +1,8 @@
 # Agentic RAG for Enterprise Knowledge Search
 
 A course project for searching enterprise documents and answering with sources.
-Implemented: dataset audit, BM25/dense retrieval, a generation adapter, and
-retrieval metrics. Agents and the full evaluation runner are still planned.
+Implemented: dataset audit, full-corpus build, BM25/dense retrieval, a generation
+adapter, retrieval metrics, and a retrieval evaluation runner. Agents are planned.
 
 [GitHub repository](https://github.com/hira-mian/Agentic-Enterprise-RAG-System)
 
@@ -59,11 +59,25 @@ development: 300; calibration: 100; final: 100; golden examples: 60
 ```
 
 Raw data stays in ignored `.cache/audit/`. The sample is not a complete evaluation
-corpus. This command prepares data; it does not run baseline evaluation.
+corpus; use the full corpus below for baselines. This command prepares data; it does not run baseline evaluation.
 
 See [Data Card](docs/DATA_CARD.md), [shared contracts](docs/CONTRACTS.md), and
 [evaluation protocol](docs/EVALUATION.md). Frozen split IDs and audit summaries
 are in `evaluation/`. Do not regenerate them with different settings silently.
+
+## Full-corpus baselines
+
+Build the full 511,958-document corpus, index it with BM25+, and score the
+development split:
+
+```sh
+python -m src.data.corpus --clone
+python -m src.retrieval.corpus_bm25
+python -m src.evaluation.run_retrieval --method bm25 --split development
+```
+
+BM25+ development results: Recall@10 0.692, nDCG@10 0.604 (282 scored questions).
+See [full-corpus baselines](docs/FULL_CORPUS.md) for details and category scores.
 
 ## Retrieval and generation
 

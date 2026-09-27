@@ -45,6 +45,30 @@ Observed at the pinned revision:
   questions form the regression set. See [evaluation protocol](EVALUATION.md)
   for grouping and split rules. We do not train a model, so no training set exists.
 
+## Full corpus
+
+Baselines use the full corpus from the upstream generator repository at commit
+`d36685e273713975ee20299bbf1ab64165575b3c`, built by `python -m src.data.corpus`.
+See `evaluation/corpus_manifest.json` for counts and hashes.
+
+| Source | Documents |
+| --- | ---: |
+| Slack | 285,605 |
+| Gmail | 121,390 |
+| Linear | 35,308 |
+| Google Drive | 25,108 |
+| HubSpot | 15,016 |
+| Fireflies | 10,173 |
+| GitHub | 8,052 |
+| Jira | 6,118 |
+| Confluence | 5,188 |
+| **Total** | **511,958** |
+
+The repository has 511,962 document files. Four IDs are each reused by two
+different files; we keep the file named in upstream's `uuid_index.json`. One of
+these IDs is a reference document. All 722 reference documents are present.
+Documents average 767 word tokens (title and content).
+
 ## Limitations
 
 Synthetic data may not reflect real employee questions. Sources and question

@@ -1,7 +1,8 @@
 # Evaluation protocol
 
-Retrievers, generation adapter, splits, and retrieval metrics are implemented.
-The full runner and answer scoring remain to be built. No benchmark results yet.
+Retrievers, generation adapter, splits, retrieval metrics, and a full-corpus
+retrieval runner are implemented. Answer scoring remains to be built. BM25+
+development results are in [full-corpus baselines](FULL_CORPUS.md).
 
 ## Data splits
 
