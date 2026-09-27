@@ -1,8 +1,0 @@
-datasets
-pandas
-numpy
-rank-bm25
-sentence-transformers
-faiss-cpu
-scikit-learn
-pytest>=8.3,<9
