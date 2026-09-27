@@ -91,4 +91,48 @@ python -m src.retrieval.corpus_dense --device cuda --batch-size 256
 python -m src.evaluation.run_retrieval --method dense --device cuda --split development
 ```
 
-Results will go to `evaluation/results/dense_full_development/`.
+Results are in `evaluation/results/dense_full_development/`. They were run on a
+Colab T4 from commit `e924855` with no local changes. The embeddings cover all
+511,958 documents in 26 shards. The index's `corpus_sha256` differs from the local
+BM25+ index because the Parquet file was rebuilt on Colab. The document content
+hash (`content_sha256`) is identical.
+
+## Comparison: development split (282 scored questions)
+
+| Question type | Scored | BM25+ R@10 | BGE R@10 | BM25+ nDCG@10 | BGE nDCG@10 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| **Overall** | 282 | **0.692** | 0.468 | **0.604** | 0.367 |
+| basic | 105 | 0.771 | 0.505 | 0.674 | 0.375 |
+| semantic | 75 | 0.413 | 0.160 | 0.281 | 0.084 |
+| intra_document_reasoning | 24 | 1.000 | 0.750 | 0.911 | 0.641 |
+| project_related | 24 | 0.676 | 0.543 | 0.634 | 0.475 |
+| constrained | 18 | 0.917 | 0.861 | 0.820 | 0.705 |
+| completeness | 12 | 0.497 | 0.334 | 0.516 | 0.369 |
+| conflicting_info | 12 | 0.792 | 0.625 | 0.810 | 0.512 |
+| miscellaneous | 12 | 0.917 | 0.750 | 0.886 | 0.641 |
+
+Recall@5 is 0.625 for BM25+ and 0.382 for BGE; Recall@20 is 0.747 and 0.525.
+Queries take about 20 ms for BM25+ (CPU) and 130 ms for BGE (T4 GPU, including
+query encoding).
+
+Findings:
+
+- BM25+ beats BGE-small in every category. Per question, BM25+ has higher
+  Recall@10 on 88 questions, BGE on 14, and 180 tie. The mean paired difference is
+  -0.224 (95% bootstrap CI -0.280 to -0.169).
+- The BGE result is not a pipeline error. For 10 missed questions we re-embedded
+  the retrieved and reference documents independently and reproduced the Colab
+  scores to within 0.001. Reference documents simply score below the top 20.
+- Scores are compressed: top-1 and 20th-ranked scores are often only 0.01–0.05
+  apart, so near-duplicate topical documents crowd out the answer. The corpus uses
+  internal codenames and identifiers that exact word matching handles well and a
+  small general-purpose embedding model does not.
+- `semantic` questions were expected to favor dense retrieval but do not
+  (0.160 vs 0.413). We have not yet examined why; that belongs in the error
+  analysis.
+- The methods are partly complementary. Counting a reference document as found
+  if either method's top 10 contains it gives Recall@10 of 0.731, above BM25+
+  alone. That supports the planned hybrid fusion.
+- Possible dense improvements, not tried: shorter passages (for example 128–256
+  tokens) to reduce dilution of specific facts, a larger embedding model, or
+  reranking.

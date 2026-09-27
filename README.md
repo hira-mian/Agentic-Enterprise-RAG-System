@@ -76,9 +76,15 @@ python -m src.retrieval.corpus_bm25
 python -m src.evaluation.run_retrieval --method bm25 --split development
 ```
 
-BM25+ development results: Recall@10 0.692, nDCG@10 0.604 (282 scored questions).
-See [full-corpus baselines](docs/FULL_CORPUS.md) for details and category scores.
-The BGE-small + FAISS baseline needs a GPU; run
+Development results (282 scored questions):
+
+| Baseline | Recall@10 | nDCG@10 |
+| --- | ---: | ---: |
+| BM25+ | 0.692 | 0.604 |
+| BGE-small + FAISS | 0.468 | 0.367 |
+
+See [full-corpus baselines](docs/FULL_CORPUS.md) for category scores and analysis.
+The BGE embedding step needs a GPU; run
 [`notebooks/dense_baseline_colab.ipynb`](notebooks/dense_baseline_colab.ipynb) on Colab.
 
 ## Retrieval and generation
