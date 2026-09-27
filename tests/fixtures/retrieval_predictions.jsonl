@@ -1,0 +1,2 @@
+{"question_id":"demo-1","question_type":"basic","retrieved_doc_ids":["d1","d1","irrelevant","d2"],"relevant_doc_ids":["d1","d2"]}
+{"question_id":"demo-2","question_type":"info_not_found","retrieved_doc_ids":[],"relevant_doc_ids":[]}

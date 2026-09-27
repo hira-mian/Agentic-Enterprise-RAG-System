@@ -1,0 +1,10 @@
+{
+  "document": {"doc_id":"demo-1","source_type":"confluence","title":"Demo policy","content":"Uploads are limited to 10 MB.","metadata_origin":"synthetic"},
+  "request": {"question":"What is the upload limit?","mode":"baseline"},
+  "user": {"user_id":"demo-user","allowed_doc_ids":["demo-1"]},
+  "response": {
+    "answer":{"status":"answered","text":"The upload limit is 10 MB.","citation_ids":["source-1"]},
+    "sources":[{"citation_id":"source-1","chunk":{"chunk_id":"demo-1:0:29","doc_id":"demo-1","source_type":"confluence","text":"Uploads are limited to 10 MB.","start_char":0,"end_char":29},"score":1.0,"retrieval_method":"bm25"}],
+    "trace":{"run_id":"demo-run","stop_reason":"single_pass","total_latency_ms":12,"usage":{"api_calls":0,"estimated_cost_usd":0}}
+  }
+}
