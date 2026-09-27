@@ -78,6 +78,8 @@ python -m src.evaluation.run_retrieval --method bm25 --split development
 
 BM25+ development results: Recall@10 0.692, nDCG@10 0.604 (282 scored questions).
 See [full-corpus baselines](docs/FULL_CORPUS.md) for details and category scores.
+The BGE-small + FAISS baseline needs a GPU; run
+[`notebooks/dense_baseline_colab.ipynb`](notebooks/dense_baseline_colab.ipynb) on Colab.
 
 ## Retrieval and generation
 

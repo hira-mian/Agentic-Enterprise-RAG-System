@@ -24,11 +24,17 @@ def load_questions(path: Path, splits_path: Path, split: str) -> list[dict]:
     return sorted(selected, key=lambda q: q["question_id"])
 
 
-def load_retriever(method: str, index: Path):
+def load_retriever(method: str, index: Path, device: str = "cpu"):
     if method == "bm25":
         from src.retrieval.corpus_bm25 import CorpusBM25
 
         return CorpusBM25.load(index)
+    if method == "dense":
+        from src.retrieval.corpus_dense import BGEModel, CorpusDense
+
+        # Encode queries with the same precision as the stored passages.
+        fp16 = json.loads((index / "manifest.json").read_text())["model"]["fp16"]
+        return CorpusDense.load(index, BGEModel(device, fp16=fp16))
     raise ValueError(f"Unsupported method: {method}")
 
 
@@ -82,8 +88,11 @@ def git_state() -> dict:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--method", choices=["bm25"], default="bm25")
-    parser.add_argument("--index", type=Path, default=CORPUS_DIR / "indexes" / "bm25")
+    parser.add_argument("--method", choices=["bm25", "dense"], default="bm25")
+    parser.add_argument(
+        "--index", type=Path, help="Default: .cache/corpus/indexes/<method>"
+    )
+    parser.add_argument("--device", default="cpu", help="Query encoder device (dense)")
     parser.add_argument(
         "--questions", type=Path, default=CORPUS_DIR / "questions.jsonl"
     )
@@ -106,7 +115,8 @@ def main():
     )
     questions = load_questions(args.questions, args.splits, args.split)
     start = time.perf_counter()
-    retriever = load_retriever(args.method, args.index)
+    index = args.index or CORPUS_DIR / "indexes" / args.method
+    retriever = load_retriever(args.method, index, args.device)
     load_seconds = time.perf_counter() - start
     rows, latencies = run(retriever, questions, args.top_k)
     metrics = evaluate_retrieval(rows, KS)

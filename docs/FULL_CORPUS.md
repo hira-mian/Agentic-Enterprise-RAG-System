@@ -67,8 +67,28 @@ are in `summary.json`. Small categories have wide uncertainty.
 
 The final split stays untouched until settings are frozen.
 
-## Next: BGE-small + FAISS
+## BGE-small + FAISS (open-source reference baseline)
 
-Dense retrieval will use the same corpus, runner, and metrics. Embedding about
-500k documents is slow on CPU, so the embedding step should be resumable and able
-to run on a GPU.
+Uses the pinned `BAAI/bge-small-en-v1.5` model from Hugging Face with the same
+corpus, runner, and metrics as BM25+.
+
+- Unit: the median document is about 1,000 BGE tokens, and only 6% fit in the
+  model's 512-token limit. Each document (title + content) is split into
+  500-token windows with 50-token overlap, about 1.5 million passages in all.
+- Scoring: exact FAISS inner product over normalized embeddings (cosine). A
+  document's score is its best passage's score. Queries use BGE's retrieval prefix.
+- Embeddings are stored as float16 shards, one per 20,000 documents. Completed
+  shards are skipped on rerun, so interrupted runs resume. fp16 inference is the
+  default on GPU and is recorded in the manifest.
+
+Embedding on a CPU would take more than a day, so run it on a GPU. The easiest
+way is [`notebooks/dense_baseline_colab.ipynb`](../notebooks/dense_baseline_colab.ipynb)
+on a free Colab T4. It builds the corpus, embeds, scores the development split,
+and saves everything to Google Drive. Equivalent commands:
+
+```sh
+python -m src.retrieval.corpus_dense --device cuda --batch-size 256
+python -m src.evaluation.run_retrieval --method dense --device cuda --split development
+```
+
+Results will go to `evaluation/results/dense_full_development/`.
