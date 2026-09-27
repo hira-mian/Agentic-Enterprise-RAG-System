@@ -1,0 +1,45 @@
+{
+  "commit": "d36685e273713975ee20299bbf1ab64165575b3c",
+  "content_sha256": "dbe0ae637846ba4c64e8b8867d7153839e5a800004304d861e20982ec573c090",
+  "coverage": {
+    "questions": 500,
+    "questions_without_references": 30,
+    "referenced_documents": 722,
+    "referenced_documents_missing": []
+  },
+  "documents": 511958,
+  "extraction": "upstream title_field_name/content_field_names labels",
+  "files": 511962,
+  "questions_sha256": "f9524b9157cd43aae36b99333a124738804306ea6d07f332d49faa6d3d147905",
+  "repo": "https://github.com/onyx-dot-app/EnterpriseRAG-Bench.git",
+  "skipped": [
+    {
+      "path": "confluence/eng-developer-experience/docs-site/sdk-docs-quick-wins-sprint-plan.json",
+      "reason": "not canonical for dsid_f292876dbb47462d85997383af306490"
+    },
+    {
+      "path": "hubspot/company-signal-peak-logistics.json",
+      "reason": "not canonical for dsid_8a0c5430bac64f8da21c2cee5a7f4df5"
+    },
+    {
+      "path": "jira/internal-support/INT-7832-cleanup-stale-test-instances-and-archived-volumes-access.json",
+      "reason": "not canonical for dsid_6df52fdb96ae4edcb76464738bca3340"
+    },
+    {
+      "path": "jira/ops-requests/SUP-175001-evening-5xx-surge-apigw-autoscaler-warmup-crashloop.json",
+      "reason": "not canonical for dsid_feb1e9063ebb4947bb4f935393c01f0f"
+    }
+  ],
+  "source_counts": {
+    "confluence": 5188,
+    "fireflies": 10173,
+    "github": 8052,
+    "gmail": 121390,
+    "google_drive": 25108,
+    "hubspot": 15016,
+    "jira": 6118,
+    "linear": 35308,
+    "slack": 285605
+  },
+  "version": 1
+}

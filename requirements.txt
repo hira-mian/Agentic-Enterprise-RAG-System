@@ -2,6 +2,8 @@ datasets
 pandas
 numpy
 rank-bm25
+bm25s>=0.3.11,<0.4
+pyarrow
 sentence-transformers
 faiss-cpu
 scikit-learn

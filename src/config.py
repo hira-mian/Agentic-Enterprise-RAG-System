@@ -7,6 +7,10 @@ from pydantic import BaseModel, ConfigDict, Field
 ROOT = Path(__file__).resolve().parents[1]
 DATASET_ID = "onyx-dot-app/EnterpriseRAG-Bench"
 DATASET_REVISION = "69916e31c68aa5963c00248fd7f0bc12d04fd235"
+# Full corpus source: the upstream generator repository at a pinned commit.
+CORPUS_REPO_URL = "https://github.com/onyx-dot-app/EnterpriseRAG-Bench.git"
+CORPUS_COMMIT = "d36685e273713975ee20299bbf1ab64165575b3c"
+CORPUS_DIR = ROOT / ".cache" / "corpus"
 
 
 class Settings(BaseModel):
