@@ -1,7 +1,6 @@
 # Full-corpus baselines
 
-Baselines run over all 511,958 EnterpriseRAG-Bench documents, not the 256-document
-inspection sample.
+Baselines run over all 511,958 EnterpriseRAG-Bench documents.
 
 ## Corpus
 
