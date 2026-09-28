@@ -1,140 +1,167 @@
-# Full-corpus baselines
+# Baselines on the full dataset
 
-Baselines run over all 511,958 EnterpriseRAG-Bench documents, not the 256-document
-inspection sample.
+We compare two standard ways of finding documents, run over all 511,958 documents
+of EnterpriseRAG-Bench. They are the starting point our agentic system must beat.
 
-## Corpus
+## At a glance
 
-The corpus comes from the upstream generator repository at a pinned commit
-(`CORPUS_COMMIT` in `src/config.py`), which stores each document as a JSON file.
+| | BM25+ | BGE-small + FAISS |
+| --- | --- | --- |
+| **Idea** | Keyword search: find documents that share the question's words | Meaning search: find documents with similar meaning, even with different words |
+| **Assignment role** | Simple baseline | Open-source reference baseline |
+| **Recall@10** | **0.692** | 0.468 |
+| **nDCG@10** | **0.604** | 0.367 |
+| **Time per question** | ~20 ms (CPU) | ~130 ms (GPU) |
+| **Setup time** | ~5 minutes to build the index (CPU) | ~2 hours to embed the documents (GPU) |
+
+**Bottom line:** keyword search is clearly better on this dataset, but the two
+methods find different documents, so combining them looks promising.
+
+## How we measure
+
+We use the 300 **development** questions. 18 of them (high-level and
+"information not found" questions) have no correct documents to find, so they are
+not scored, leaving **282 scored questions**.
+
+For each question, a method returns its 20 best documents. We then check:
+
+- **Recall@k**: what share of the correct documents appear in the top *k*
+  results. Example: a question with 2 correct documents, and 1 of them in the
+  top 10, scores 0.5 Recall@10.
+- **nDCG@k**: like recall, but finding a correct document at rank 1 counts more
+  than at rank 10. 1.0 means every correct document is ranked at the very top.
+
+Scores are averaged over all scored questions.
+
+## The data
+
+We build the dataset from the benchmark's GitHub repository, pinned to one version
+so results are reproducible:
 
 ```sh
 python -m src.data.corpus --clone
 ```
 
-This clones the repository into `.cache/corpus/` (about 5 GB), converts every
-document to `.cache/corpus/documents.parquet` (about 1 GB), copies `questions.jsonl`,
-and writes `evaluation/corpus_manifest.json`. It takes about a minute after cloning.
+This downloads the repository (about 5 GB) and saves all documents into one file,
+`.cache/corpus/documents.parquet`. All 722 documents that the 500 questions point
+to are included.
 
-- Title and content use upstream's own field labels (`title_field_name`,
-  `content_field_names`), matching the Hugging Face export.
-- Four document IDs are reused by two different files each. We keep the file
-  upstream's `uuid_index.json` points to and list the others under `skipped`.
-- All 722 reference documents for the 500 questions are present. The questions
-  match the Hugging Face revision used for `evaluation/splits.json`.
+## Baseline 1: BM25+ (keyword search)
 
-## BM25+ (simple baseline)
+**How it works:** BM25+ scores each document by how many of the question's words
+it contains. Rare words (like a project codename) count more than common words
+(like "the" or "update"), and very long documents are not unfairly favored. We
+index each document's title and text as one unit and use the
+[`bm25s`](https://github.com/xhluca/bm25s) library.
+
+**Run it:**
 
 ```sh
-python -m src.retrieval.corpus_bm25
+python -m src.retrieval.corpus_bm25          # build the index (~5 min, ~8 GB memory)
 python -m src.evaluation.run_retrieval --method bm25 --split development
 ```
 
-- Unit: one entry per document (title + content), like upstream's baselines.
-  Scoring is per document, so no chunk deduplication is needed.
-- Scoring: BM25+ via [`bm25s`](https://github.com/xhluca/bm25s) with the same
-  tokenizer and settings as `src/retrieval/bm25.py` (k1=1.5, b=0.75, delta=1).
-  Tests check the scores match `bm25s` and `rank_bm25`.
-- The index is built with NumPy in one streaming pass: about 4.5 minutes and 7 GB
-  of peak memory on 4 CPUs. It is stored in `.cache/corpus/indexes/bm25` (about 2 GB).
-- Queries take about 21 ms each. Benchmark runs search every document. The
-  contract-compatible `search()` applies permissions and source filters.
+## Baseline 2: BGE-small + FAISS (meaning search)
 
-The runner writes `predictions.jsonl`, `summary.json`, and `upstream_answers.jsonl`
-(upstream's answer format, top 10 documents, for their scorer) to
-`evaluation/results/<method>_full_<split>/`.
+**How it works:**
 
-## Results: development split (300 questions)
+1. The pretrained model [BGE-small](https://huggingface.co/BAAI/bge-small-en-v1.5)
+   turns text into a list of numbers (an "embedding"). Texts with similar meaning
+   get similar numbers.
+2. The model reads at most 512 tokens (word pieces) at a time, and most documents
+   are longer, so each document is split into overlapping passages. The full
+   dataset becomes 1,724,015 passages.
+3. [FAISS](https://github.com/facebookresearch/faiss) finds the passages most
+   similar to the question. Each document gets the score of its best passage.
 
-Recall@k and nDCG@k count unique documents. 18 questions have no reference
-documents (`high_level`, `info_not_found`) and are excluded from retrieval scores.
+**Run it:** embedding 1.7 million passages takes more than a day on a normal
+computer, so we run it on a GPU. Open
+[`notebooks/dense_baseline_colab.ipynb`](../notebooks/dense_baseline_colab.ipynb)
+in Google Colab, select a T4 GPU, and run all cells. On a free T4 the embedding
+took 1 hour 50 minutes. Progress is saved to Google Drive, so if Colab
+disconnects, run the cells again and it continues where it stopped.
 
-| Question type | Scored | Recall@5 | Recall@10 | Recall@20 | nDCG@10 |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| **Overall** | 282 | 0.625 | 0.692 | 0.747 | 0.604 |
-| basic | 105 | 0.743 | 0.771 | 0.800 | 0.674 |
-| semantic | 75 | 0.307 | 0.413 | 0.480 | 0.281 |
-| intra_document_reasoning | 24 | 0.958 | 1.000 | 1.000 | 0.911 |
-| project_related | 24 | 0.523 | 0.676 | 0.816 | 0.634 |
-| constrained | 18 | 0.806 | 0.917 | 0.972 | 0.820 |
-| completeness | 12 | 0.393 | 0.497 | 0.622 | 0.516 |
-| conflicting_info | 12 | 0.792 | 0.792 | 0.917 | 0.810 |
-| miscellaneous | 12 | 0.917 | 0.917 | 0.917 | 0.886 |
+## Results
 
-BM25+ is strong when questions reuse document wording and weak on `semantic`
-questions, which avoid keyword overlap. Source and single/multiple-reference slices
-are in `summary.json`. Small categories have wide uncertainty.
+Development questions, 282 scored. **Bold** marks the better method.
 
-The final split stays untouched until settings are frozen.
-
-## BGE-small + FAISS (open-source reference baseline)
-
-Uses the pinned `BAAI/bge-small-en-v1.5` model from Hugging Face with the same
-corpus, runner, and metrics as BM25+.
-
-- Unit: the median document is about 1,000 BGE tokens, and only 6% fit in the
-  model's 512-token limit. Each document (title + content) is split into
-  500-token windows with 50-token overlap: 1,724,015 passages in all (3.4 per
-  document).
-- Scoring: exact FAISS inner product over normalized embeddings (cosine). A
-  document's score is its best passage's score. Queries use BGE's retrieval prefix.
-- Embeddings are stored as float16 shards, one per 20,000 documents. Completed
-  shards are skipped on rerun, so interrupted runs resume. fp16 inference is the
-  default on GPU and is recorded in the manifest.
-
-Embedding on a CPU would take more than a day. On a Colab T4 it took 1 hour
-50 minutes (6,600 s, about 260 passages per second). The easiest
-way is [`notebooks/dense_baseline_colab.ipynb`](../notebooks/dense_baseline_colab.ipynb)
-on a free Colab T4. It builds the corpus, embeds, scores the development split,
-and saves everything to Google Drive. Equivalent commands:
-
-```sh
-python -m src.retrieval.corpus_dense --device cuda --batch-size 256
-python -m src.evaluation.run_retrieval --method dense --device cuda --split development
-```
-
-Results are in `evaluation/results/dense_full_development/`. They were run on a
-Colab T4 from commit `e924855` with no local changes. The embeddings cover all
-511,958 documents in 26 shards (1,724,015 passages). The index's `corpus_sha256` differs from the local
-BM25+ index because the Parquet file was rebuilt on Colab. The document content
-hash (`content_sha256`) is identical.
-
-## Comparison: development split (282 scored questions)
-
-| Question type | Scored | BM25+ R@10 | BGE R@10 | BM25+ nDCG@10 | BGE nDCG@10 |
+| Question type | Questions | BM25+ Recall@10 | BGE Recall@10 | BM25+ nDCG@10 | BGE nDCG@10 |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | **Overall** | 282 | **0.692** | 0.468 | **0.604** | 0.367 |
-| basic | 105 | 0.771 | 0.505 | 0.674 | 0.375 |
-| semantic | 75 | 0.413 | 0.160 | 0.281 | 0.084 |
-| intra_document_reasoning | 24 | 1.000 | 0.750 | 0.911 | 0.641 |
-| project_related | 24 | 0.676 | 0.543 | 0.634 | 0.475 |
-| constrained | 18 | 0.917 | 0.861 | 0.820 | 0.705 |
-| completeness | 12 | 0.497 | 0.334 | 0.516 | 0.369 |
-| conflicting_info | 12 | 0.792 | 0.625 | 0.810 | 0.512 |
-| miscellaneous | 12 | 0.917 | 0.750 | 0.886 | 0.641 |
+| Basic | 105 | **0.771** | 0.505 | **0.674** | 0.375 |
+| Semantic (reworded) | 75 | **0.413** | 0.160 | **0.281** | 0.084 |
+| Intra-document reasoning | 24 | **1.000** | 0.750 | **0.911** | 0.641 |
+| Project related | 24 | **0.676** | 0.543 | **0.634** | 0.475 |
+| Constrained | 18 | **0.917** | 0.861 | **0.820** | 0.705 |
+| Completeness | 12 | **0.497** | 0.334 | **0.516** | 0.369 |
+| Conflicting info | 12 | **0.792** | 0.625 | **0.810** | 0.512 |
+| Miscellaneous | 12 | **0.917** | 0.750 | **0.886** | 0.641 |
 
-Recall@5 is 0.625 for BM25+ and 0.382 for BGE; Recall@20 is 0.747 and 0.525.
-Queries take about 20 ms for BM25+ (CPU) and 130 ms for BGE (T4 GPU, including
-query encoding).
+Recall at other cutoffs:
 
-Findings:
+| | Recall@5 | Recall@10 | Recall@20 |
+| --- | ---: | ---: | ---: |
+| BM25+ | **0.625** | **0.692** | **0.747** |
+| BGE-small | 0.382 | 0.468 | 0.525 |
 
-- BM25+ beats BGE-small in every category. Per question, BM25+ has higher
-  Recall@10 on 88 questions, BGE on 14, and 180 tie. The mean paired difference is
-  -0.224 (95% bootstrap CI -0.280 to -0.169).
-- The BGE result is not a pipeline error. For 10 missed questions we re-embedded
-  the retrieved and reference documents independently and reproduced the Colab
-  scores to within 0.001. Reference documents simply score below the top 20.
-- Scores are compressed: top-1 and 20th-ranked scores are often only 0.01–0.05
-  apart, so near-duplicate topical documents crowd out the answer. The corpus uses
-  internal codenames and identifiers that exact word matching handles well and a
-  small general-purpose embedding model does not.
-- `semantic` questions were expected to favor dense retrieval but do not
-  (0.160 vs 0.413). We have not yet examined why; that belongs in the error
-  analysis.
-- The methods are partly complementary. Counting a reference document as found
-  if either method's top 10 contains it gives Recall@10 of 0.731, above BM25+
-  alone. That supports the planned hybrid fusion.
-- Possible dense improvements, not tried: shorter passages (for example 128–256
-  tokens) to reduce dilution of specific facts, a larger embedding model, or
-  reranking.
+Categories with 12–24 questions are small, so treat their scores as rough.
+
+## What we learned
+
+1. **Keyword search wins everywhere.** BM25+ is better in every question type.
+   Question by question, BM25+ does better on 88, BGE on 14, and they tie on 180.
+   The average gap in Recall@10 is 0.22 (95% confidence interval 0.17–0.28), so
+   this is not luck.
+2. **The BGE result is real, not a bug.** We independently recomputed BGE's
+   scores for 10 questions it missed and got the same numbers. The correct
+   documents simply score lower than the ones BGE returned.
+3. **Why BGE struggles (our current explanation).** BGE gives many related
+   documents nearly the same score (the 1st and 20th results often differ by only
+   0.01–0.05), so similar documents crowd out the right one. The dataset is also
+   full of internal codenames and IDs, which exact word matching handles well and
+   a small general-purpose model does not.
+4. **Reworded questions are hard for both.** "Semantic" questions avoid the
+   document's wording, which should help meaning search, yet BGE scores lower
+   (0.160 vs 0.413). We have not investigated why yet; this belongs in the error
+   analysis.
+5. **The methods complement each other.** If we count a document as found when
+   either method has it in its top 10, Recall@10 rises to 0.731, higher than
+   BM25+ alone. This supports combining both in a hybrid search.
+
+**Ideas to improve meaning search (not tried yet):** shorter passages, a larger
+embedding model, or re-ranking the top results with a stronger model.
+
+**Not run yet:** the final split (100 questions) stays untouched until our
+settings are final.
+
+## Where the results are
+
+| Folder | Contents |
+| --- | --- |
+| `evaluation/results/bm25_full_development/` | BM25+ results |
+| `evaluation/results/dense_full_development/` | BGE results |
+
+Each folder has:
+
+- `summary.json`: all scores, including breakdowns by source and by number of
+  correct documents
+- `predictions.jsonl`: the top 20 documents returned for each question
+- `upstream_answers.jsonl`: the top 10 in the benchmark's own format
+
+## Reproducibility details
+
+- **Dataset version:** upstream commit `d36685e273713975ee20299bbf1ab64165575b3c`.
+  Counts and a content fingerprint are in `evaluation/corpus_manifest.json`.
+- **Duplicate IDs:** the upstream repository has 511,962 files, but four document
+  IDs are each used by two different files. We keep the file that upstream's own
+  index (`uuid_index.json`) points to.
+- **BM25+ settings:** k1=1.5, b=0.75, delta=1, lowercase word tokens. Our index
+  builder is tested to rank documents the same way as the `bm25s` and `rank_bm25`
+  libraries.
+- **BGE settings:** model `BAAI/bge-small-en-v1.5` at revision
+  `5c38ec7c405ec4b44b94cc5a9bb96e735b38267a`; 500-token passages with 50-token
+  overlap; half precision (fp16) on the GPU; BGE's standard query prefix; exact
+  cosine search.
+- **Runs:** BM25+ ran on 4 CPUs. BGE ran on a Colab T4 from commit `e924855`. The
+  BGE index's corpus file hash differs from the local one because the file was
+  rebuilt on Colab; the document content fingerprint is identical.
