@@ -74,14 +74,16 @@ corpus, runner, and metrics as BM25+.
 
 - Unit: the median document is about 1,000 BGE tokens, and only 6% fit in the
   model's 512-token limit. Each document (title + content) is split into
-  500-token windows with 50-token overlap, about 1.5 million passages in all.
+  500-token windows with 50-token overlap: 1,724,015 passages in all (3.4 per
+  document).
 - Scoring: exact FAISS inner product over normalized embeddings (cosine). A
   document's score is its best passage's score. Queries use BGE's retrieval prefix.
 - Embeddings are stored as float16 shards, one per 20,000 documents. Completed
   shards are skipped on rerun, so interrupted runs resume. fp16 inference is the
   default on GPU and is recorded in the manifest.
 
-Embedding on a CPU would take more than a day, so run it on a GPU. The easiest
+Embedding on a CPU would take more than a day. On a Colab T4 it took 1 hour
+50 minutes (6,600 s, about 260 passages per second). The easiest
 way is [`notebooks/dense_baseline_colab.ipynb`](../notebooks/dense_baseline_colab.ipynb)
 on a free Colab T4. It builds the corpus, embeds, scores the development split,
 and saves everything to Google Drive. Equivalent commands:
@@ -93,7 +95,7 @@ python -m src.evaluation.run_retrieval --method dense --device cuda --split deve
 
 Results are in `evaluation/results/dense_full_development/`. They were run on a
 Colab T4 from commit `e924855` with no local changes. The embeddings cover all
-511,958 documents in 26 shards. The index's `corpus_sha256` differs from the local
+511,958 documents in 26 shards (1,724,015 passages). The index's `corpus_sha256` differs from the local
 BM25+ index because the Parquet file was rebuilt on Colab. The document content
 hash (`content_sha256`) is identical.
 
