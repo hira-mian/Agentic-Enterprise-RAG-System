@@ -1,75 +1,60 @@
-# Retrieval and generation
+# Answer generation and metrics
 
-## Indexes
+How the answer generator and the search metrics work. To build the dataset and
+run the search baselines, see [baselines on the full dataset](FULL_CORPUS.md).
 
-Activate `.venv`, install `requirements.txt`, and run `python -m src.data.audit`
-if the sample corpus is missing.
+## Answer generation
 
-```sh
-python -m src.retrieval.index_cli build --input .cache/audit/documents.jsonl --output .cache/indexes/bm25 --method bm25
-python -m src.retrieval.index_cli search --index .cache/indexes/bm25 --query 'perf-canary rollback' --benchmark-all-docs --top-k 5
-```
+`GroundedGenerator.generate(request)` writes an answer from the documents found by
+search and returns `(Answer, Usage)`.
 
-Defaults: 256 documents, 1,000-character chunks, 100-character overlap. Chunks
-preserve text, offsets, title, source, timestamp, and provenance. IDs include
-content and chunking settings. Blank chunks are skipped; duplicate IDs fail.
-BM25+ uses lowercase word tokens, k1=1.5, b=.75, delta=1; nonmatches are omitted.
+- It only uses documents the user is allowed to see, up to a size limit.
+- If no documents are found, it says it cannot answer instead of calling the LLM.
+- Every citation must point to a document it was given. A malformed answer or an
+  unknown citation is an error. (A valid citation does not guarantee the answer is
+  correct.)
+- Only temporary provider errors are retried.
 
-Dense retrieval downloads pinned BGE-small weights and runs locally on CPU:
+**Using Claude:** set `ANTHROPIC_API_KEY` and pass an `AnthropicConfig` with the
+model, `allow_paid=True`, a budget, token prices, a timeout, and a maximum answer
+length.
 
-```sh
-python -m src.retrieval.index_cli build --input .cache/audit/documents.jsonl --output .cache/indexes/dense --method dense --limit 8 --chunk-size 600 --overlap 60
-python -m src.retrieval.index_cli search --index .cache/indexes/dense --query 'How can I undo a deployment?' --benchmark-all-docs
-```
+- **Paid calls are off by default.** You must opt in with `allow_paid=True`.
+- Before each call, the worst-case cost is reserved against the budget, so
+  estimated spending stays within it. Prices are supplied by you, so costs are
+  estimates, not a bill.
+- Use one provider per job, run one call at a time, and count retries in one
+  place (the SDK's own retries are turned off).
 
-BGE uses normalized embeddings and its [query prefix](https://huggingface.co/BAAI/bge-small-en-v1.5);
-FAISS inner product gives cosine similarity. Oversize inputs fail; reduce chunk
-size rather than silently truncating. On macOS, `OMP_NUM_THREADS` defaults to 1
-to avoid the native-library crash found during testing. Set it before starting
-Python if you import PyTorch/FAISS before this module.
+## Search metrics
 
-Both retrievers filter permissions and sources before ranking. Date filters
-exclude unknown timestamps. Use `--allow-doc ID` for restricted scope;
-`--benchmark-all-docs` grants access to the whole local index for benchmark runs.
-Without either flag, queries return no hits.
+For each question, the metrics compare the ranked documents a method returned with
+the question's correct documents:
 
-Indexes and manifests stay in `.cache/`. Manifests record settings and checksums;
-load only trusted artifacts. Each query rebuilds statistics or an index over its
-authorized subset. This works for small corpora but needs optimization for scale.
+- **Recall@k:** share of the correct documents that appear in the top *k*.
+- **nDCG@k:** like recall, but a correct document ranked higher counts more.
+- Results are averaged overall and per question type. Questions with no correct
+  documents are left out and counted separately. A question whose search failed
+  scores zero.
 
-## Generation
-
-`GroundedGenerator.generate(request)` returns `(Answer, Usage)`. It uses authorized
-chunks that fit the context budget. Empty context abstains without a provider call.
-Malformed/truncated output and unknown citations produce errors. Only transient
-provider failures are retried. Valid citations do not guarantee a correct answer.
-
-For Anthropic, set `ANTHROPIC_API_KEY` and supply `AnthropicConfig` with a model,
-`allow_paid=True`, budget, input/output token prices, timeout, and output-token cap.
-Paid calls are disabled by default. The provider reserves worst-case cost before
-each attempt and retains reservations after failures. Prices are caller-supplied;
-this is a conservative estimate, not a billing guarantee. Use one provider per
-sequential job. API call counts include token counting; lost response usage is
-unknown. SDK retries are disabled so retries are counted in one place.
-
-## Metrics and tests
+The evaluation runner computes these for the full dataset (see
+[baselines](FULL_CORPUS.md)). To try the metrics on a small made-up example:
 
 ```sh
 python -m src.evaluation.retrieval_metrics --input tests/fixtures/retrieval_predictions.jsonl
+```
+
+## Tests
+
+```sh
 python -m pytest -q
 ```
 
-Retriever `top_k` counts chunks; metric k counts unique documents. Pass parent
-document IDs in ranked order, with enough hits for the cutoff. Metrics report
-Recall@k, binary nDCG@k, category averages, errors, and exclusions. Unlabeled
-questions are N/A; eligible error rows score zero. Fixtures are invented examples.
+The tests use small invented examples and run without internet. The Claude
+integration is tested with a fake provider; the tests make no paid calls.
 
-After downloading BGE, run the real-model test offline:
+An optional test runs the real BGE model once it has been downloaded:
 
 ```sh
 HF_HUB_OFFLINE=1 RUN_MODEL_TESTS=1 python -m pytest tests/test_dense_model.py -q
 ```
-
-Local checks passed for 2,736 BM25 chunks, 169 BGE chunks, persistence, semantic
-retrieval, and permissions. Anthropic is mock-tested; no paid calls were made.
-The sample lacks most reference evidence, so these checks are not baseline results.

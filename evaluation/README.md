@@ -1,16 +1,18 @@
-# Evaluation artifacts
+# Evaluation files
 
-- `splits.json`: frozen question IDs, dataset revision, seed, category counts,
-  and development regression IDs. Do not tune on the final partition.
-- `data_audit.json`: bounded document/question profiles and missing reference IDs
-  for development questions. This is corpus coverage, not retrieval performance.
-- `development_examples.json`: one real development question per category, with
-  original IDs and relevance labels. From Onyx's EnterpriseRAG-Bench (MIT declared
-  in its dataset card), revision recorded in `splits.json`:
-  https://huggingface.co/datasets/onyx-dot-app/EnterpriseRAG-Bench
+| File or folder | What it is |
+| --- | --- |
+| `splits.json` | Which questions are in the development (300), calibration (100), and final (100) splits. Fixed; do not tune on the final split. |
+| `corpus_manifest.json` | Record of the exact dataset used: source commit, document counts, and a content fingerprint. Written by `python -m src.data.corpus`. |
+| `development_examples.json` | One example development question per question type, with its reference documents. |
+| `results/bm25_full_development/` | BM25+ baseline results on the development split |
+| `results/dense_full_development/` | BGE-small + FAISS baseline results on the development split |
 
-Reproduce with `python -m src.data.audit` from the project root. Full cached
-question records and the 256-document prefix live in ignored `.cache/audit/`.
-See `docs/DATA_CARD.md` and `docs/EVALUATION.md` for limitations and protocol.
+Each results folder contains `summary.json` (all scores), `predictions.jsonl` (the
+top 20 documents per question), and `upstream_answers.jsonl` (the top 10 in the
+benchmark's own format).
 
-These are data-preparation artifacts. No baseline results exist yet.
+The data comes from Onyx's
+[EnterpriseRAG-Bench](https://github.com/onyx-dot-app/EnterpriseRAG-Bench) (MIT).
+See the [data card](../docs/DATA_CARD.md) and
+[baseline results](../docs/FULL_CORPUS.md).

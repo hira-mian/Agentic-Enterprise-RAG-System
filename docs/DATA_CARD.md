@@ -1,81 +1,102 @@
-# Data Card: EnterpriseRAG-Bench
+# Data card: EnterpriseRAG-Bench
 
-## Source and license
+## What it is
 
-[EnterpriseRAG-Bench](https://huggingface.co/datasets/onyx-dot-app/EnterpriseRAG-Bench)
-is Onyx's synthetic enterprise dataset about a fictional company, Redwood
-Inference. The upstream card reports over 500,000 documents and 500 questions.
-We access its `documents` and `questions` subsets through Hugging Face `datasets`.
+[EnterpriseRAG-Bench](https://github.com/onyx-dot-app/EnterpriseRAG-Bench), made by
+Onyx, is a synthetic set of internal documents for a fictional AI company,
+"Redwood Inference", plus questions about them. It is designed to test search
+and question answering over company data.
 
-Pinned revision: `69916e31c68aa5963c00248fd7f0bc12d04fd235`.
-The card declares MIT licensing; the inspected dataset tree has no separate
-LICENSE file. Preserve attribution and applicable notices when distributing data.
-The card asks that benchmark data stay out of training corpora. Our use is
-retrieval and evaluation. Public reads worked without a token; network access
-and Hub rate limits apply.
+- **License:** MIT (declared by the dataset authors). Keep attribution when
+  sharing the data.
+- **Use:** we use it only for search and evaluation. The authors ask that it never
+  be used to train models, and we do not.
+- **Version:** we build it from the authors' GitHub repository at commit
+  `d36685e273713975ee20299bbf1ab64165575b3c`, so everyone gets identical data.
+  The same data is also published on
+  [Hugging Face](https://huggingface.co/datasets/onyx-dot-app/EnterpriseRAG-Bench).
 
-## Fields
+Build it with:
 
-| Data | Upstream fields |
-| --- | --- |
-| Documents | `doc_id`, `source_type`, `title`, `content` |
-| Questions | `question_id`, `question_type`, `source_types`, `question` |
-| Evaluation labels | `expected_doc_ids`, `gold_answer`, `answer_facts` |
+```sh
+python -m src.data.corpus --clone
+```
 
-Chunk IDs and offsets are generated locally. Timestamps, employee roles, project
-memberships, permissions, and Jira/CRM record fields are not structured columns
-in this schema. Extracted values need validation; missing permissions do not mean
-public access. Test permissions are explicitly synthetic.
+This writes all documents to `.cache/corpus/documents.parquet` and records counts
+and a content fingerprint in `evaluation/corpus_manifest.json`.
 
-## Audit and splits
+## Documents
 
-Run `python -m src.data.audit` to inspect the first 256 documents and all question
-rows. Raw data goes to ignored `.cache/audit/`; summaries and split IDs go to
-`evaluation/`.
+**511,958 documents** from 9 sources:
 
-Observed at the pinned revision:
+| Source | What it contains | Documents |
+| --- | --- | ---: |
+| Slack | Team chat threads | 285,605 |
+| Gmail | Email threads | 121,390 |
+| Linear | Project tickets | 35,308 |
+| Google Drive | Shared documents | 25,108 |
+| HubSpot | Sales CRM records | 15,016 |
+| Fireflies | Meeting transcripts | 10,173 |
+| GitHub | Pull requests | 8,052 |
+| Jira | Support tickets | 6,118 |
+| Confluence | Wiki pages and runbooks | 5,188 |
+| **Total** | | **511,958** |
 
-- All 256 sampled documents are Confluence records, with no empty core fields or
-  duplicate IDs. The prefix is not representative of the corpus.
-- All 500 question IDs are unique. Thirty questions have no reference document or
-  source IDs, including high-level and information-not-found questions.
-- The sample contains 10 of 442 development reference-document links. Only two
-  questions with relevance labels have all their reference documents present.
-- Question splits: 300 development, 100 calibration, 100 final; 60 development
-  questions form the regression set. See [evaluation protocol](EVALUATION.md)
-  for grouping and split rules. We do not train a model, so no training set exists.
+Each document has an ID, a source, a title, and text. An average document is
+about 770 words long.
 
-## Full corpus
+## Questions
 
-Baselines use the full corpus from the upstream generator repository at commit
-`d36685e273713975ee20299bbf1ab64165575b3c`, built by `python -m src.data.corpus`.
-See `evaluation/corpus_manifest.json` for counts and hashes.
+**500 questions**, each labeled with a reference answer and the documents that
+contain it.
 
-| Source | Documents |
-| --- | ---: |
-| Slack | 285,605 |
-| Gmail | 121,390 |
-| Linear | 35,308 |
-| Google Drive | 25,108 |
-| HubSpot | 15,016 |
-| Fireflies | 10,173 |
-| GitHub | 8,052 |
-| Jira | 6,118 |
-| Confluence | 5,188 |
-| **Total** | **511,958** |
+| Type | Count | What it tests |
+| --- | ---: | --- |
+| Basic | 175 | One document holds the answer |
+| Semantic | 125 | Like basic, but reworded to avoid the document's key words |
+| Intra-document reasoning | 40 | Combining distant parts of one long document |
+| Project related | 40 | Combining several documents about one project |
+| Constrained | 30 | Several documents look relevant; details rule out all but one |
+| Conflicting info | 20 | Documents contradict each other |
+| Completeness | 20 | Every relevant document (up to 10) is needed |
+| Miscellaneous | 20 | Informal or loosely organized documents |
+| Info not found | 20 | The answer is not in the data |
+| High level | 10 | The answer is spread across the company, not in one document |
 
-The repository has 511,962 document files. Four IDs are each reused by two
-different files; we keep the file named in upstream's `uuid_index.json`. One of
-these IDs is a reference document. All 722 reference documents are present.
-Documents average 767 word tokens (title and content).
+- 30 questions (info not found and high level) have no reference documents, so
+  they cannot be scored on search.
+- 93 questions have more than one reference document.
+- All 722 reference documents are in the dataset.
+
+## How we split the questions
+
+| Split | Questions | Use |
+| --- | ---: | --- |
+| Development | 300 | Building and comparing methods |
+| Calibration | 100 | Tuning the Search Critic later |
+| Final | 100 | Final evaluation only, after all settings are frozen |
+
+Each split has a similar mix of question types. Questions that share a reference
+document, or have identical wording, stay in the same split, which limits overlap
+between development and final (related questions about the same project can still
+land in different splits). We do not train a model, so there is no training split. The split is
+fixed in `evaluation/splits.json`; see the [evaluation plan](EVALUATION.md) for
+the exact rules.
+
+## Data quality notes
+
+- **Duplicate IDs:** the repository has 511,962 document files, but four IDs are
+  each used by two different files. We keep the file that the authors' own index
+  (`uuid_index.json`) points to. One of these four is a reference document.
+- **No structured metadata:** dates, authors' roles, project membership, and
+  access permissions are not provided as fields. Any values we extract from the
+  text must be checked. Permissions used in our tests are made up for testing.
 
 ## Limitations
 
-Synthetic data may not reflect real employee questions. Sources and question
-categories are imbalanced; documents may be duplicated or conflicting; relevance
-labels may be incomplete. Freshness and access metadata remain unverified.
-
-The sample is for inspection. Build a larger corpus before baseline evaluation,
-or label results as reduced-corpus scores and report reference coverage. Keep
-missing reference documents in recall denominators. Sample findings do not
-establish corpus-wide missingness or quality.
+- The data is synthetic, so questions and documents may not match how real
+  employees write.
+- Sources are imbalanced (over half is Slack), and question types are imbalanced
+  (basic and semantic are 60% of questions).
+- The authors deliberately added noise: near-duplicate documents, outdated
+  information, and misfiled documents. Some reference labels may be incomplete.

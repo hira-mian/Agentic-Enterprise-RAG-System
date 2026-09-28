@@ -96,5 +96,5 @@ rounds. Evaluate fixes on the same development set.
 ## Milestone 2
 
 Deliver the Data Card, runnable harness, two baseline tables, validated rubric,
-failure analysis, README commands/output, and TA check-in. The audit command only
-prepares data. Hybrid reranking and the critic are not required for this checkpoint.
+failure analysis, README commands/output, and TA check-in. Hybrid reranking and
+the critic are not required for this checkpoint.
