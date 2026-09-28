@@ -6,8 +6,8 @@ BGE-small development results are in [full-corpus baselines](FULL_CORPUS.md).
 
 ## Data splits
 
-Use the revision in `src/config.py` and frozen IDs in `evaluation/splits.json`.
-These are our partitions of the upstream `test` split:
+Use the dataset commit in `src/config.py` and the frozen IDs in
+`evaluation/splits.json`, which divide the benchmark's 500 questions:
 
 | Set | Questions | Use |
 | --- | --- | --- |
@@ -21,7 +21,7 @@ at a target ratio of 60/20/20; keeping groups intact takes priority. Other share
 projects and near-duplicates may still cross splits.
 
 The development regression set contains six questions per category (60 total).
-`evaluation/development_examples.json` includes one per category. Use the full
+Use the full
 development set for baseline tables. Version changes to splits; do not tune on
 final outcomes. Documents form a shared search corpus. Reference answers belong
 only in the evaluator. We do not train a model or use benchmark data for training.

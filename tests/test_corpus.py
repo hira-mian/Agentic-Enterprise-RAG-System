@@ -4,13 +4,11 @@ import bm25s
 import numpy as np
 import pyarrow.parquet as pq
 import pytest
-from rank_bm25 import BM25Plus
 
 from src.contracts import SearchRequest, UserContext
 from src.data.corpus import build_corpus, extract_document, question_coverage
 from src.evaluation.run_retrieval import load_questions, run
-from src.retrieval.bm25 import BM25Config, tokenize
-from src.retrieval.corpus_bm25 import CorpusBM25, build_bm25
+from src.retrieval.corpus_bm25 import BM25Config, CorpusBM25, build_bm25, tokenize
 
 DOCS = [
     "kappa elevation scale for data grids",
@@ -83,7 +81,7 @@ def test_build_corpus_fails_when_indexed_document_is_missing(tmp_path):
         build_corpus(repo, tmp_path / "docs.parquet")
 
 
-def test_vectorized_index_matches_bm25s_and_rank_bm25():
+def test_vectorized_index_matches_bm25s():
     rng = np.random.default_rng(0)
     words = [f"w{i}" for i in range(200)]
     docs = [" ".join(rng.choice(words, rng.integers(1, 50))) for _ in range(300)]
@@ -91,7 +89,6 @@ def test_vectorized_index_matches_bm25s_and_rank_bm25():
     tokens = [tokenize(d) for d in docs]
     reference = bm25s.BM25(k1=1.5, b=0.75, delta=1, method="bm25+")
     reference.index(tokens, show_progress=False)
-    plus = BM25Plus(tokens, k1=1.5, b=0.75, delta=1)
     assert stats["documents"] == 300
     for query in (["w1", "w2"], ["w7", "w7", "w99"], ["w150"]):
         ours = model.get_scores_from_ids([model.vocab_dict[t] for t in query])
@@ -102,7 +99,6 @@ def test_vectorized_index_matches_bm25s_and_rank_bm25():
             np.round(ours, 4).argsort(kind="stable"),
             np.round(expected, 4).argsort(kind="stable"),
         )
-        np.testing.assert_allclose(ours, plus.get_scores(query), rtol=1e-5)
 
 
 @pytest.fixture

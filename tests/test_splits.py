@@ -2,7 +2,6 @@ from collections import defaultdict
 
 import pytest
 
-from src.data.audit import audit
 from src.evaluation.splits import build_splits
 
 
@@ -49,27 +48,12 @@ def test_duplicate_ids_rejected():
         build_splits([questions()[0], questions()[0]])
 
 
-def test_audit_reports_missing_evidence_not_false_coverage():
-    report, _ = audit(
-        [{"doc_id": "d0", "source_type": "demo", "content": "x", "title": "x"}],
-        questions(),
-        "test-revision",
-    )
-    coverage = report["development_reference_coverage"]
-    assert any(row["missing_doc_ids"] for row in coverage)
-    assert all(
-        row["expected"] == row["present"] + len(row["missing_doc_ids"])
-        for row in coverage
-    )
-
-
-def test_committed_split_manifest_and_examples_are_consistent():
+def test_committed_split_manifest_is_consistent():
     import json
     from pathlib import Path
 
     base = Path(__file__).resolve().parents[1] / "evaluation"
     manifest = json.loads((base / "splits.json").read_text())
-    examples = json.loads((base / "development_examples.json").read_text())
     parts = manifest["splits"]
     ids = [qid for values in parts.values() for qid in values]
     assert len(ids) == len(set(ids)) == 500
@@ -80,6 +64,3 @@ def test_committed_split_manifest_and_examples_are_consistent():
     ]
     assert len(manifest["golden_development_ids"]) == 60
     assert set(manifest["golden_development_ids"]) <= set(parts["development"])
-    assert len({row["question_type"] for row in examples}) == 10
-    assert all(row["question_id"] in parts["development"] for row in examples)
-    assert all("gold_answer" not in row for row in examples)

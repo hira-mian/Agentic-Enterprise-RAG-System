@@ -52,9 +52,3 @@ python -m pytest -q
 
 The tests use small invented examples and run without internet. The Claude
 integration is tested with a fake provider; the tests make no paid calls.
-
-An optional test runs the real BGE model once it has been downloaded:
-
-```sh
-HF_HUB_OFFLINE=1 RUN_MODEL_TESTS=1 python -m pytest tests/test_dense_model.py -q
-```

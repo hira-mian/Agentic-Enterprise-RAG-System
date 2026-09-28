@@ -97,6 +97,7 @@ Results are saved to `evaluation/results/`.
 - [Baselines on the full dataset](docs/FULL_CORPUS.md): methods, results, findings
 - [Data card](docs/DATA_CARD.md): the dataset in detail
 - [Evaluation plan](docs/EVALUATION.md): metrics and how answers will be graded
+- [Answer generation and metrics](docs/GENERATION.md): the LLM answer writer and search metrics
 - [Shared contracts](docs/CONTRACTS.md): data formats used across the code
 
 ## Contributing

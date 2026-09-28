@@ -156,8 +156,8 @@ Each folder has:
   IDs are each used by two different files. We keep the file that upstream's own
   index (`uuid_index.json`) points to.
 - **BM25+ settings:** k1=1.5, b=0.75, delta=1, lowercase word tokens. Our index
-  builder is tested to rank documents the same way as the `bm25s` and `rank_bm25`
-  libraries.
+  builder is tested to produce the same scores as the `bm25s` library's own
+  indexer.
 - **BGE settings:** model `BAAI/bge-small-en-v1.5` at revision
   `5c38ec7c405ec4b44b94cc5a9bb96e735b38267a`; 500-token passages with 50-token
   overlap; half precision (fp16) on the GPU; BGE's standard query prefix; exact

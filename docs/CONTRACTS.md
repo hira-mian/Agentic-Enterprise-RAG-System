@@ -33,5 +33,5 @@ and critics `assess`. Their signatures are defined at the end of the module.
   again. Unknown cost is null. Keep credentials and benchmark answers out of
   runtime requests and traces.
 
-`src/config.py` pins dataset/model revisions and defines defaults. Generation
+`src/config.py` pins the dataset commit and model revision and defines defaults. Generation
 settings and budget enforcement are in `src/generation/generator.py`.

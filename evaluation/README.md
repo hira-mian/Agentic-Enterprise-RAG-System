@@ -4,7 +4,6 @@
 | --- | --- |
 | `splits.json` | Which questions are in the development (300), calibration (100), and final (100) splits. Fixed; do not tune on the final split. |
 | `corpus_manifest.json` | Record of the exact dataset used: source commit, document counts, and a content fingerprint. Written by `python -m src.data.corpus`. |
-| `development_examples.json` | One example development question per question type, with its reference documents. |
 | `results/bm25_full_development/` | BM25+ baseline results on the development split |
 | `results/dense_full_development/` | BGE-small + FAISS baseline results on the development split |
 

@@ -3,8 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from src.contracts import Document, GenerationRequest, SearchRequest, Usage, UserContext
-from src.data.preprocessing import chunk_documents
+from src.contracts import Chunk, Evidence, GenerationRequest, Usage, UserContext
 from src.generation.generator import (
     AnthropicConfig,
     AnthropicProvider,
@@ -13,23 +12,26 @@ from src.generation.generator import (
     GroundedGenerator,
     ProviderError,
 )
-from src.retrieval.bm25 import BM25Index
 from tests.fakes import FakeProvider
 
 
 def request():
     user = UserContext(user_id="demo", allowed_doc_ids={"d"})
-    chunks = chunk_documents(
-        [
-            Document(
-                doc_id="d",
-                source_type="docs",
-                title="Limit",
-                content="Upload limit is 10 MB.",
-            )
-        ]
+    text = "Upload limit is 10 MB."
+    chunk = Chunk(
+        chunk_id="d:0:22",
+        doc_id="d",
+        source_type="docs",
+        title="Limit",
+        text=text,
+        start_char=0,
+        end_char=len(text),
     )
-    evidence = BM25Index(chunks).search(SearchRequest(query="upload", user=user))
+    evidence = (
+        Evidence(
+            citation_id=chunk.chunk_id, chunk=chunk, score=1.0, retrieval_method="bm25"
+        ),
+    )
     return GenerationRequest(
         question="What is the upload limit?", user=user, evidence=evidence
     )

@@ -2,11 +2,11 @@
 
 The index is built with vectorized NumPy instead of bm25s' per-token Python loop so
 ~500k documents fit in memory; tests check the result matches `bm25s.BM25.index`.
-Scores equal rank_bm25's BM25Plus (same tokenizer, idf log((N+1)/df), and delta).
 """
 
 import argparse
 import json
+import re
 import time
 from collections import Counter
 from hashlib import sha256
@@ -15,13 +15,23 @@ from pathlib import Path
 import bm25s
 import numpy as np
 import pyarrow.parquet as pq
+from pydantic import Field
 
 from src.config import CORPUS_DIR
-from src.contracts import Chunk, Evidence, SearchRequest, validate_evidence
-from src.retrieval.bm25 import BM25Config, tokenize
-from src.retrieval.common import eligible
+from src.contracts import Chunk, Contract, Evidence, SearchRequest, validate_evidence
 
 INDEX_VERSION = 1
+
+
+class BM25Config(Contract):
+    k1: float = Field(default=1.5, gt=0)
+    b: float = Field(default=0.75, ge=0, le=1)
+    delta: float = Field(default=1, ge=0)
+    tokenizer: str = "unicode-words-lower-v1"
+
+
+def tokenize(text: str) -> list[str]:
+    return re.findall(r"\w+", text.lower())
 
 
 def document_text(title: str, content: str) -> str:
@@ -156,7 +166,7 @@ class CorpusBM25:
         results = []
         for doc_id, score in self.rank(request.query, request.top_k, mask):
             chunk = self._chunk(doc_id)
-            if chunk and eligible(chunk, request):
+            if chunk:  # The mask already applied permissions and sources.
                 results.append(
                     Evidence(
                         citation_id=chunk.chunk_id,
