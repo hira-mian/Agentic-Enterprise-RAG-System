@@ -43,8 +43,9 @@ What this means:
 
 - Keyword search wins in every question type, likely because this dataset is
   full of project codenames and IDs, which exact word matching handles well.
-- The two methods find different documents. Together, their top 10 results contain
-  about 73% of the correct documents on average, so a hybrid of both is a promising next step.
+- BGE finds some documents that keyword search misses. Merging the two with more
+  weight on keyword search raises Recall@10 slightly (0.692 → 0.705); bigger gains
+  likely need re-ranking or a stronger model.
 
 Full results by question type: [docs/FULL_CORPUS.md](docs/FULL_CORPUS.md).
 

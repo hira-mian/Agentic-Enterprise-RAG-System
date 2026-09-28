@@ -14,8 +14,9 @@ of EnterpriseRAG-Bench. They are the starting point our agentic system must beat
 | **Time per question** | ~20 ms (CPU) | ~130 ms (GPU) |
 | **Setup time** | ~5 minutes to build the index (CPU) | ~2 hours to embed the documents (GPU) |
 
-**Bottom line:** keyword search is clearly better on this dataset, but the two
-methods find different documents, so combining them looks promising.
+**Bottom line:** keyword search is clearly better on this dataset. A weighted
+merge of both methods helps slightly, which makes hybrid search a reasonable next
+step.
 
 ## How we measure
 
@@ -124,9 +125,17 @@ Categories with 12–24 questions are small, so treat their scores as rough.
    document's wording, which should help meaning search, yet BGE scores lower
    (0.160 vs 0.413). We have not investigated why yet; this belongs in the error
    analysis.
-5. **The methods complement each other.** If we count a document as found when
-   either method has it in its top 10, Recall@10 rises to 0.731, higher than
-   BM25+ alone. This supports combining both in a hybrid search.
+5. **Merging helps a little when BM25+ is weighted more.** BGE finds a correct
+   document for 10 of the 72 questions where BM25+'s top 10 has none. Merging the
+   two ranked lists with equal weight (RRF) gives Recall@10 of 0.686, slightly
+   below BM25+ alone (0.692), because BGE's weaker results push out correct ones.
+   Weighting BM25+ at 0.6–0.8 gives 0.705 (11 questions better, 4 worse). The
+   weight was chosen on the development split, so this should be confirmed on the
+   calibration split. 62 questions fail with both methods, so larger gains likely
+   need re-ranking, query rewriting, or a stronger embedding model.
+
+   (The earlier figure of 0.731 counted both top-10 lists together, about 18.6
+   documents, so it is not comparable to Recall@10.)
 
 **Ideas to improve meaning search (not tried yet):** shorter passages, a larger
 embedding model, or re-ranking the top results with a stronger model.
