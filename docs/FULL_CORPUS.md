@@ -134,8 +134,6 @@ Categories with 12–24 questions are small, so treat their scores as rough.
    calibration split. 62 questions fail with both methods, so larger gains likely
    need re-ranking, query rewriting, or a stronger embedding model.
 
-   (The earlier figure of 0.731 counted both top-10 lists together, about 18.6
-   documents, so it is not comparable to Recall@10.)
 
 **Ideas to improve meaning search (not tried yet):** shorter passages, a larger
 embedding model, or re-ranking the top results with a stronger model.
