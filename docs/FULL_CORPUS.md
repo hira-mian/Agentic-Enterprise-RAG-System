@@ -113,7 +113,7 @@ Categories with 12–24 questions are small, so treat their scores as rough.
    Question by question, BM25+ does better on 88, BGE on 14, and they tie on 180.
    The average gap in Recall@10 is 0.22 (95% confidence interval 0.17–0.28), so
    this is not luck.
-2. **The BGE result is real, not a bug.** We independently recomputed BGE's
+2. **The BGE result.** We independently recomputed BGE's
    scores for 10 questions it missed and got the same numbers. The correct
    documents simply score lower than the ones BGE returned.
 3. **Why BGE struggles (our current explanation).** BGE gives many related
