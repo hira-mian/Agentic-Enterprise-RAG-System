@@ -31,8 +31,7 @@ only in the evaluator. We do not train a model or use benchmark data for trainin
 Compare BM25+ and pretrained BGE-small dense retrieval with the same corpus,
 questions, generator/prompt, top-k, context budget, and access policy. Add hybrid
 retrieval and agentic search later. Record code commit, model/dependency versions,
-seed, corpus hash, and settings. These are project comparisons, not official
-leaderboard reproductions.
+seed, corpus hash, and settings. 
 
 ## Metrics
 
