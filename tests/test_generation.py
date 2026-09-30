@@ -1,22 +1,75 @@
 import json
-from types import SimpleNamespace
-
 import pytest
-
-from src.contracts import Chunk, Evidence, GenerationRequest, Usage, UserContext
-from src.generation.generator import (
-    AnthropicConfig,
-    AnthropicProvider,
-    Completion,
-    GenerationConfig,
-    GroundedGenerator,
-    ProviderError,
-)
+from pathlib import Path
+from pydantic import ValidationError
+from src.config import Settings
+from src.contracts import Answer, Chunk, GenerationRequest, QueryRequest, QueryResponse, UserContext, Evidence, Usage
+from types import SimpleNamespace
+from src.generation.generator import AnthropicConfig, AnthropicProvider, Completion, GenerationConfig, GroundedGenerator, ProviderError
 from tests.fakes import FakeProvider
 
 
+# Shared contracts
+
+FIXTURE = json.loads((Path(__file__).parent / "fixtures/contracts.json").read_text())
+
+
+def test_default_and_unknown_identity_deny_access():
+    assert not UserContext().permits("demo-1")
+    assert not UserContext(allowed_doc_ids=frozenset({"demo-1"})).permits("demo-1")
+    assert not UserContext(user_id="known", role="admin").permits("demo-1")
+
+
+def test_client_cannot_supply_authorization():
+    with pytest.raises(ValidationError):
+        QueryRequest.model_validate({"question": "hello", "allowed_doc_ids": ["demo-1"]})
+
+
+def test_generation_rejects_denied_evidence():
+    response = QueryResponse.model_validate(FIXTURE["response"])
+    with pytest.raises(ValidationError):
+        GenerationRequest(
+            question="limit?", user=UserContext(), evidence=response.sources
+        )
+    request = GenerationRequest(
+        question="limit?",
+        user=UserContext.model_validate(FIXTURE["user"]),
+        evidence=response.sources,
+    )
+    assert request.evidence == response.sources
+
+
+def test_unknown_citation_rejected():
+    data = json.loads(json.dumps(FIXTURE["response"]))
+    data["answer"]["citation_ids"] = ["invented"]
+    with pytest.raises(ValidationError):
+        QueryResponse.model_validate(data)
+
+
+def test_invalid_offsets_and_nonfinite_budget():
+    with pytest.raises(ValidationError):
+        Chunk(
+            chunk_id="x",
+            doc_id="d",
+            source_type="slack",
+            text="abc",
+            start_char=5,
+            end_char=7,
+        )
+    with pytest.raises(ValidationError):
+        Settings(max_cost_usd=float("nan"))
+
+
+def test_abstention_needs_no_citation_but_answer_does():
+    Answer(status="insufficient_evidence", text="No supporting evidence found.")
+    with pytest.raises(ValidationError):
+        Answer(status="answered", text="I guessed.")
+
+
+# Answer generation
+
 def request():
-    user = UserContext(user_id="demo", allowed_doc_ids={"d"})
+    user = UserContext(user_id="demo", allowed_doc_ids=frozenset({"d"}))
     text = "Upload limit is 10 MB."
     chunk = Chunk(
         chunk_id="d:0:22",

@@ -155,8 +155,9 @@ class AnthropicProvider:
         self.client = client
         self.reserved_usd = 0.0
 
-    def complete(self, system, prompt):
+    def complete(self, system: str, prompt: str):
         import anthropic
+        from anthropic.types import MessageParam
 
         config = self.config
         if not config.allow_paid or config.budget_usd <= 0:
@@ -169,7 +170,7 @@ class AnthropicProvider:
                 )
             except anthropic.AnthropicError:
                 raise ProviderError(usage=Usage(estimated_cost_usd=0)) from None
-        messages = [{"role": "user", "content": prompt}]
+        messages: list[MessageParam] = [{"role": "user", "content": prompt}]
         calls = 0
         generation_started = False
         try:
