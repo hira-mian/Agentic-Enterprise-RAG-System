@@ -79,6 +79,9 @@ in Colab and run all cells.
 
 Results are saved to `evaluation/results/`.
 
+**Live demo:** open [`notebooks/demo_colab.ipynb`](notebooks/demo_colab.ipynb) in Colab to
+search all documents interactively and run the benchmark live.
+
 ## Repository layout
 
 | Folder | Contents |
@@ -90,7 +93,7 @@ Results are saved to `evaluation/results/`.
 | `src/agents/`, `src/api/` | Planned: Search Agent, Search Critic, web API |
 | `evaluation/` | Question splits, dataset record, and results |
 | `docs/` | Documentation |
-| `notebooks/` | Colab notebook for the BGE baseline |
+| `notebooks/` | Colab notebooks: the BGE baseline, and a live search demo |
 | `tests/` | Automated tests (run on every push) |
 
 ## Documentation
