@@ -123,7 +123,7 @@ Categories with 12–24 questions are small, so treat their scores as rough.
    a small general-purpose model does not.
 4. **Reworded questions are hard for both.** "Semantic" questions avoid the
    document's wording, which should help meaning search, yet BGE scores lower
-   (0.160 vs 0.413). We have not investigated why yet
+   (0.160 vs 0.413). We have not investigated why yet.
 5. **Merging helps a little when BM25+ is weighted more.** BGE finds a correct
    document for 10 of the 72 questions where BM25+'s top 10 has none. Merging the
    two ranked lists with equal weight (RRF) gives Recall@10 of 0.686, slightly
@@ -132,7 +132,6 @@ Categories with 12–24 questions are small, so treat their scores as rough.
    weight was chosen on the development split, so this should be confirmed on the
    calibration split. 62 questions fail with both methods, so larger gains likely
    need re-ranking, query rewriting, or a stronger embedding model.
-
 
 **Ideas to improve meaning search (not tried yet):** shorter passages, a larger
 embedding model, or re-ranking the top results with a stronger model.
