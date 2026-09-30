@@ -113,7 +113,7 @@ Categories with 12–24 questions are small, so treat their scores as rough.
    Question by question, BM25+ does better on 88, BGE on 14, and they tie on 180.
    The average gap in Recall@10 is 0.22 (95% confidence interval 0.17–0.28), so
    this is not luck.
-2. **The BGE result is real, not a bug.** We independently recomputed BGE's
+2. **The BGE result.** We independently recomputed BGE's
    scores for 10 questions it missed and got the same numbers. The correct
    documents simply score lower than the ones BGE returned.
 3. **Why BGE struggles (our current explanation).** BGE gives many related
@@ -123,8 +123,7 @@ Categories with 12–24 questions are small, so treat their scores as rough.
    a small general-purpose model does not.
 4. **Reworded questions are hard for both.** "Semantic" questions avoid the
    document's wording, which should help meaning search, yet BGE scores lower
-   (0.160 vs 0.413). We have not investigated why yet; this belongs in the error
-   analysis.
+   (0.160 vs 0.413). We have not investigated why yet
 5. **Merging helps a little when BM25+ is weighted more.** BGE finds a correct
    document for 10 of the 72 questions where BM25+'s top 10 has none. Merging the
    two ranked lists with equal weight (RRF) gives Recall@10 of 0.686, slightly
@@ -134,8 +133,6 @@ Categories with 12–24 questions are small, so treat their scores as rough.
    calibration split. 62 questions fail with both methods, so larger gains likely
    need re-ranking, query rewriting, or a stronger embedding model.
 
-   (The earlier figure of 0.731 counted both top-10 lists together, about 18.6
-   documents, so it is not comparable to Recall@10.)
 
 **Ideas to improve meaning search (not tried yet):** shorter passages, a larger
 embedding model, or re-ranking the top results with a stronger model.
